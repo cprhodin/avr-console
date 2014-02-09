@@ -22,7 +22,7 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
-#include "librb.h"
+#include "librb/librb.h"
 
 /*
  * Special characters recognized for translation and processing.
