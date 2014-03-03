@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _RB_H_
-#define _RB_H_
+#ifndef _LIBRB_H_
+#define _LIBRB_H_
+
+#include <avr/io.h>
 
 /*
  * ring-buffer control stucture
@@ -31,28 +33,31 @@ struct ring_buffer {
 };
 
 /*
- * ring-buffer state flags
+ * ring-buffer state flag bits
  */
-#define RB_CANTPUT 0x01
-#define RB_CANTECHO 0x02
-#define RB_CANTGET 0x04
+enum {
+    RB_CANTPUT_MSK = _BV(0),
+    RB_CANTECHO_MSK = _BV(1),
+    RB_CANTGET_MSK = _BV(2),
+    RB_SPARE0_MSK = _BV(3),
+    RB_SPARE1_MSK = _BV(4),
+    RB_SPARE2_MSK = _BV(5),
+    RB_SPARE3_MSK = _BV(6),
+    RB_SPARE4_MSK = _BV(7),
+};
 
 /*
- * set ring-buffer state
+ * ring-buffer state
  */
-#define set_cantput(a) ((a)->flags |= RB_CANTPUT)
-#define clr_cantput(a) ((a)->flags &= ~RB_CANTPUT)
-#define set_cantecho(a) ((a)->flags |= RB_CANTECHO)
-#define clr_cantecho(a) ((a)->flags &= ~RB_CANTECHO)
-#define set_cantget(a) ((a)->flags |= RB_CANTGET)
-#define clr_cantget(a) ((a)->flags &= ~RB_CANTGET)
-
-/*
- * ring-buffer state tests
- */
-#define rb_cantput(a) ((a)->flags & RB_CANTPUT)
-#define rb_cantecho(a) ((a)->flags & RB_CANTECHO)
-#define rb_cantget(a) ((a)->flags & RB_CANTGET)
+#define set_cantput(a) ((a)->flags |= RB_CANTPUT_MSK)
+#define clr_cantput(a) ((a)->flags &= ~RB_CANTPUT_MSK)
+#define rb_cantput(a) ((a)->flags & RB_CANTPUT_MSK)
+#define set_cantecho(a) ((a)->flags |= RB_CANTECHO_MSK)
+#define clr_cantecho(a) ((a)->flags &= ~RB_CANTECHO_MSK)
+#define rb_cantecho(a) ((a)->flags & RB_CANTECHO_MSK)
+#define set_cantget(a) ((a)->flags |= RB_CANTGET_MSK)
+#define clr_cantget(a) ((a)->flags &= ~RB_CANTGET_MSK)
+#define rb_cantget(a) ((a)->flags & RB_CANTGET_MSK)
 #define rb_empty(a) (rb_cantecho(a) && rb_cantget(a))
 #define rb_full(a) rb_cantput(a)
 
@@ -60,7 +65,7 @@ struct ring_buffer {
  * clear ring-buffer
  */
 #define rb_clear(a) do {                                                       \
-    (a)->flags = RB_CANTECHO | RB_CANTGET;                                     \
+    (a)->flags &= ~(RB_CANTECHO_MSK | RB_CANTGET_MSK);                         \
     (a)->get = (a)->echo = (a)->put = (a)->start;                              \
 } while (0)
 
@@ -92,4 +97,4 @@ extern int8_t rb_get(struct ring_buffer * const rb, volatile uint8_t * const b);
 extern uint8_t rb_erase(struct ring_buffer * const rb);
 extern uint8_t rb_kill(struct ring_buffer * const rb, uint8_t * p);
 
-#endif // _RING_BUFFER_H_
+#endif /* _LIBRB_H_ */

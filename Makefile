@@ -3,7 +3,7 @@
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile main.c project.h console.c librb/librb.h librb/librb.a
+MANIFEST = Makefile main.rl project.h console.c librb/librb.h librb/librb.a
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
@@ -14,8 +14,11 @@ CC = avr-gcc
 CFLAGS = -Wall -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__              \
          -DF_CPU=16000000
 CPPFLAGS = -MMD -MF $(DEPS_DIR)/$*.d
+LD = avr-ld
+LDFLAGS =
 LEX = flex
 YACC = bison
+RAGEL = ragel
 
 # target libraries
 LIBS = $(filter %.a, $(TARGETS))
@@ -32,6 +35,13 @@ C_HDRS = $(filter %.h, $(MANIFEST))
 
 # libraries
 LIBS = $(filter %.a, $(MANIFEST))
+
+# ragel source files
+RL_SRCS = $(filter %.rl, $(MANIFEST))
+
+# ragel generated C source and header files
+RL_C_SRCS += $(patsubst %.rl, %.c, $(RL_SRCS))
+C_SRCS += $(RL_C_SRCS)
 
 # flex source files
 L_SRCS = $(filter %.l, $(MANIFEST))
@@ -82,8 +92,11 @@ vars :
 %.yy.c %.yy.h : %.l
 	$(LEX) --outfile=$*.yy.c --header-file=$*.yy.h $<
 
+%.c : %.rl
+	$(RAGEL) -G2 $<
+
 $(APPS) : $(C_OBJS) $(LIBS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -Wl,-Map $@.map -o $@ $^
 
 librb.a : librb/librb.a
 	cp $< $@
@@ -111,8 +124,9 @@ $(C_SRC_DEPS) : $(DEPS_DIR)/%.d :
 
 .PHONY : clean
 clean :
-	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(L_C_SRCS)       \
-	                  $(L_C_HDRS) $(Y_C_SRCS) $(Y_C_HDRS) $(Y_OUTPUTS)
+	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(RL_C_SRCS)          \
+	                  $(L_C_SRCS) $(L_C_HDRS) $(Y_C_SRCS) $(Y_C_HDRS)          \
+	                  $(Y_OUTPUTS)
 	-@rmdir 2> /dev/null $(OBJS_DIR)
 	-@rmdir 2> /dev/null $(DEPS_DIR)
 

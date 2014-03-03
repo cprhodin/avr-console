@@ -22,7 +22,7 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
-#include "librb/librb.h"
+#include "librb.h"
 
 /*
  * Special characters recognized for translation and processing.
@@ -32,25 +32,6 @@
 #define KILL    ('U' & ~0x40)   // ctrl-U
 #define NL      ('\n')          // newline (line feed)
 #define SPACE   (' ')           // space
-
-/*
- * Default terminal attributes.
- */
-#ifndef is_icrnl
-#define is_icrnl() (1)          // translate received CR to NL
-#endif
-#ifndef is_onlcr
-#define is_onlcr() (1)          // translate transmitted NL to CR-NL
-#endif
-#ifndef is_echo
-#define is_echo() (1)           // echo received characters to transmitter
-#endif
-#ifndef is_icanon
-#define is_icanon() (1)         // enable canonical mode processing
-#endif
-#ifndef is_inonblock
-#define is_inonblock() (0)      // block until operation is complete
-#endif
 
 /*
  * Transmit and receive ring-buffers.
@@ -74,9 +55,36 @@ static uint8_t * volatile line_start;
 /*
  * Variables used for I/O translation and processing.
  */
+#define set_onlcr_state() (tx_rb.flags |= RB_SPARE0_MSK)
+#define clr_onlcr_state() (tx_rb.flags &= ~RB_SPARE0_MSK)
+#define is_onlcr_state() (tx_rb.flags & RB_SPARE0_MSK)
+#define clr_erase_state() (tx_rb.flags &= ~(RB_SPARE1_MSK | RB_SPARE2_MSK))
+#define set_erase_state1() (tx_rb.flags |= RB_SPARE1_MSK)
+#define is_erase_state1() (tx_rb.flags & RB_SPARE1_MSK)
+#define set_erase_state2() (tx_rb.flags |= RB_SPARE2_MSK)
+#define is_erase_state2() (tx_rb.flags & RB_SPARE2_MSK)
+
+/*
+ * Terminal attributes.
+ */
+#define set_inlcr() (rx_rb.flags |= RB_SPARE0_MSK)      // translate received CR to NL
+#define clr_inlcr() (rx_rb.flags &= ~RB_SPARE0_MSK)
+#define is_icrnl() (rx_rb.flags & RB_SPARE0_MSK)
+#define set_onlcr() (rx_rb.flags |= RB_SPARE1_MSK)      // translate transmitted NL to CR-NL
+#define clr_onlcr() (rx_rb.flags &= ~RB_SPARE1_MSK)
+#define is_onlcr() (rx_rb.flags & RB_SPARE1_MSK)
+#define set_echo() (rx_rb.flags |= RB_SPARE2_MSK)       // echo received characters to transmitter
+#define clr_echo() (rx_rb.flags &= ~RB_SPARE2_MSK)
+#define is_echo() (rx_rb.flags & RB_SPARE2_MSK)
+#define set_icanon() (rx_rb.flags |= RB_SPARE3_MSK)     // enable canonical mode processing
+#define clr_icanon() (rx_rb.flags &= ~RB_SPARE3_MSK)
+#define is_icanon() (rx_rb.flags & RB_SPARE3_MSK)
+#define set_inonblock() (rx_rb.flags |= RB_SPARE4_MSK)  // block until operation is complete
+#define clr_inonblock() (rx_rb.flags &= ~RB_SPARE4_MSK)
+#define is_inonblock() (rx_rb.flags & RB_SPARE4_MSK)
+
+
 static uint8_t erase_count;
-static uint8_t erase_state;
-static uint8_t onlcr_state;
 
 
 /*
@@ -136,27 +144,27 @@ ISR(USART_UDRE_vect)
         /*
          * (ECHOE) Echo error correcting ERASE.
          */
-        switch (erase_state) {
-        case 0:
-            erase_state++;
+        if (!is_erase_state1()) {
+            set_erase_state1();
             UDR0 = ERASE;
             return;
-        case 1:
-            erase_state++;
+        }
+
+        if (!is_erase_state2()) {
+            set_erase_state2();
             UDR0 = SPACE;
             return;
-        default:
-            erase_count--;
-            erase_state = 0;
-            c = ERASE;
-            break;
         }
+
+        erase_count--;
+        clr_erase_state();
+        c = ERASE;
     }
-    else if (onlcr_state) {
+    else if (is_onlcr_state()) {
         /*
          * (ONLCR) Complete NL to CR-NL expansion.
          */
-        onlcr_state = 0;
+        clr_onlcr_state();
         c = NL;
     }
     else {
@@ -169,7 +177,7 @@ ISR(USART_UDRE_vect)
             /*
              * (ONLCR) Start NL to CR-NL expansion.
              */
-            onlcr_state = 1;
+            set_onlcr_state();
             UDR0 = CR;
             return;
         }
@@ -181,7 +189,7 @@ ISR(USART_UDRE_vect)
     UDR0 = c;
 
     if (rb_cantget(&tx_rb) && rb_cantecho(&rx_rb) &&
-        !erase_count && !onlcr_state) {
+        !erase_count && !is_onlcr_state()) {
         tx_complete();
     }
 }
@@ -343,8 +351,8 @@ void console_init(void)
      * State variables for processing.
      */
     erase_count = 0;
-    erase_state = 0;
-    onlcr_state = 0;
+    clr_erase_state();
+    clr_onlcr_state();
 
     /*
      * Attach standard I/O to this console.

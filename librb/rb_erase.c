@@ -29,25 +29,27 @@
  */
 uint8_t rb_erase(struct ring_buffer * const rb)
 {
-    if (!rb_empty(rb)) {
-        uint8_t * put;
+    uint8_t * put;
 
-        /* space will be available for put */
-        clr_cantput(rb);
+    if (rb_empty(rb)) return 0;
 
-        put = rb->put;
-        rb_dec_ptr(rb, put);
-        rb->put = put;
+    /* space will be available for put */
+    clr_cantput(rb);
 
-        if (rb_cantecho(rb)) {
-            rb->echo = put;
-            if (rb->get == put) set_cantget(rb);
+    /* update pointer */
+    put = rb->put;
+    rb_dec_ptr(rb, put);
+    rb->put = put;
 
-            return 1;
-        }
+    /* if can't echo on entry we backed over an echoed byte */
+    if (rb_cantecho(rb)) {
+        rb->echo = put;
+        if (put == rb->get) set_cantget(rb);
 
-        if (rb->echo == put) set_cantecho(rb);
+        return 1;
     }
+
+    if (put == rb->echo) set_cantecho(rb);
 
     return 0;
 }

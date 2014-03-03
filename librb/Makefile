@@ -14,8 +14,7 @@ DEPS_DIR = .depends
 AR = avr-ar
 ARFLAGS = cru
 CC = avr-gcc
-CFLAGS = -Wall -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__              \
-         -DF_CPU=16000000
+CFLAGS = -Wall -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__
 CPPFLAGS = -MMD -MF $(DEPS_DIR)/$*.d
 LEX = flex
 YACC = bison
