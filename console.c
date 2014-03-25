@@ -233,8 +233,8 @@ ISR(USART_RX_vect)
         case KILL:
             /*
              * Handle the KILL character if the current line is not empty.
+             * rb_kill returns 0 if echo is not enabled.
              */
-            /* BUGBUG check for is_echo???? */
             erase_count += rb_kill(&rx_rb, line_start);
 
             if (erase_count) tx_enable();
