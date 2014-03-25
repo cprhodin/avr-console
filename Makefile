@@ -1,9 +1,8 @@
-
 .SUFFIXES:
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile main.rl project.h console.c librb/librb.h librb/librb.a
+MANIFEST = Makefile main.rl project.h console.c librb.h librb.a
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
@@ -110,7 +109,7 @@ librb.h : librb/librb.h
 $(DUMPS) : $(APPS)
 	avr-objdump -d $< > $@
 
-$(C_OBJS) : | $(L_C_HDRS) $(Y_C_HDRS) $(OBJS_DIR) $(DEPS_DIR)
+$(C_OBJS) : | $(MANIFEST) $(L_C_HDRS) $(Y_C_HDRS) $(OBJS_DIR) $(DEPS_DIR)
 
 $(OBJS_DIR) :
 	mkdir $(OBJS_DIR)
