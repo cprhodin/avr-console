@@ -53,22 +53,22 @@ static struct ring_buffer rx_rb;
 static uint8_t * volatile line_start;
 
 /*
- * Variables used for I/O translation and processing.
+ * Internal state variables used for I/O translation and processing.
  */
 #define set_onlcr_state() (tx_rb.flags |= RB_SPARE0_MSK)
 #define clr_onlcr_state() (tx_rb.flags &= ~RB_SPARE0_MSK)
 #define is_onlcr_state() (tx_rb.flags & RB_SPARE0_MSK)
-#define clr_erase_state() (tx_rb.flags &= ~(RB_SPARE1_MSK | RB_SPARE2_MSK))
 #define set_erase_state1() (tx_rb.flags |= RB_SPARE1_MSK)
-#define is_erase_state1() (tx_rb.flags & RB_SPARE1_MSK)
 #define set_erase_state2() (tx_rb.flags |= RB_SPARE2_MSK)
+#define clr_erase_state() (tx_rb.flags &= ~(RB_SPARE1_MSK | RB_SPARE2_MSK))
+#define is_erase_state1() (tx_rb.flags & RB_SPARE1_MSK)
 #define is_erase_state2() (tx_rb.flags & RB_SPARE2_MSK)
 
 /*
  * Terminal attributes.
  */
-#define set_inlcr() (rx_rb.flags |= RB_SPARE0_MSK)      // translate received CR to NL
-#define clr_inlcr() (rx_rb.flags &= ~RB_SPARE0_MSK)
+#define set_icrnl() (rx_rb.flags |= RB_SPARE0_MSK)      // translate received CR to NL
+#define clr_icrnl() (rx_rb.flags &= ~RB_SPARE0_MSK)
 #define is_icrnl() (rx_rb.flags & RB_SPARE0_MSK)
 #define set_onlcr() (rx_rb.flags |= RB_SPARE1_MSK)      // translate transmitted NL to CR-NL
 #define clr_onlcr() (rx_rb.flags &= ~RB_SPARE1_MSK)
@@ -234,6 +234,7 @@ ISR(USART_RX_vect)
             /*
              * Handle the KILL character if the current line is not empty.
              */
+            /* BUGBUG check for is_echo???? */
             erase_count += rb_kill(&rx_rb, line_start);
 
             if (erase_count) tx_enable();
@@ -353,6 +354,15 @@ void console_init(void)
     erase_count = 0;
     clr_erase_state();
     clr_onlcr_state();
+
+    /*
+     * Default attributes.
+     */
+    set_icrnl();
+    set_onlcr();
+    set_echo();
+    set_icanon();
+    clr_inonblock();
 
     /*
      * Attach standard I/O to this console.

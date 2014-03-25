@@ -93,10 +93,13 @@ vars :
 	$(LEX) --outfile=$*.yy.c --header-file=$*.yy.h $<
 
 %.c : %.rl
+	$(RAGEL) -G2 -Vp -o $<.dot $<
+	dot -Tps -o $<.ps $<.dot
 	$(RAGEL) -G2 $<
 
+
 $(APPS) : $(C_OBJS) $(LIBS)
-	$(CC) $(CFLAGS) -Wl,-Map $@.map -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 librb.a : librb/librb.a
 	cp $< $@
