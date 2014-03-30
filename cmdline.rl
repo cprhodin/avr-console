@@ -307,20 +307,11 @@ static uint8_t cmdid;
 static uint8_t nparm;
 static uint32_t parm[MAX_PARMS];
 
-void main(void) __attribute__((OS_main));
-void main(void)
+void cmdline(void) __attribute__((OS_main));
+void cmdline(void)
 {
     uint8_t cs;
     uint32_t acc;
-
-    /*
-     * initialize
-     */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        console_init();
-    }
-    /* interrupts are enabled */
 
     /* ragel initialization */
     %%write init;

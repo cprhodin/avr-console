@@ -2,7 +2,8 @@
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile main.rl project.h console.c librb.h librb.a
+MANIFEST = Makefile main.c timer1.c timer.h timer.c cmdline.rl project.h       \
+           console.c librb.h librb.a
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends

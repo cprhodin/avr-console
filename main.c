@@ -14,22 +14,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _PROJECT_H_
-#define _PROJECT_H_
+#include "project.h"
 
-#ifndef BAUD
-#define BAUD (250000L)
-#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <util/atomic.h>
+#include <avr/pgmspace.h>
 
-//
-// timebase timer, 0, 1 or 2 (only 1 is extensively tested)
-//
-#define TBTIMER 1
-#define TBTIMER_PRESCALER 64UL
+extern void timer1_init(void);
+extern void tick_init(void);
+extern void console_init(void);
+extern void cmdline(void);
 
-//
-// timebase counter size in bits, either 16 or 32
-//
-#define TBSIZE 32
 
-#endif // _PROJECT_H_
+void main(void) __attribute__((OS_main));
+void main(void)
+{
+    /*
+     * initialize
+     */
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        timer1_init();
+//        timebase_init();
+//        tick_init();
+
+        console_init();
+    }
+    /* interrupts are enabled */
+
+    /*
+     * run command line interface
+     */
+    cmdline();
+}
