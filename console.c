@@ -335,7 +335,8 @@ static FILE console = FDEV_SETUP_STREAM(console_putchar, console_getchar,
 /*
  * Initialize console interface. Must be called with interrupts disabled.
  */
-void console_init(void)
+static void console_init(void) __attribute__((__constructor__));
+static void console_init(void)
 {
     /*
      * Initialize the transmit and receive ring buffers.

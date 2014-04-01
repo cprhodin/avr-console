@@ -72,6 +72,7 @@
 //  TIMSK1=0x00, all interrupts disabled
 //  TCNT1=0x0000, start counter at 0
 //
+void timer1_init(void) __attribute__((__constructor__));
 void timer1_init(void)
 {
     // interrupts disabled

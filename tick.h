@@ -14,35 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "project.h"
+#ifndef _TICK_H_
+#define _TICK_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <util/atomic.h>
-#include <avr/pgmspace.h>
+extern void tick_set_period(uint32_t period);
+extern void tick_enable(uint8_t enable);
+extern void tick_init(void);
 
-#include "timer.h"
-#include "tick.h"
-
-extern void cmdline(void);
-
-
-void main(void)
-{
-    /*
-     * initialize
-     */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        timebase_init();
-        tick_init();
-    }
-    /* interrupts are enabled */
-
-    /*
-     * run command line interface
-     */
-    cmdline();
-}
+#endif /* _TICK_H_ */

@@ -2,8 +2,8 @@
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile main.c timer1.c timer.h timer.c cmdline.rl project.h       \
-           console.c librb.h librb.a
+MANIFEST = Makefile project.h main.c timer1.c timer.h timer.c tick.c librb.h   \
+           librb.a console.c cmdline.rl
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
@@ -11,7 +11,7 @@ DEPS_DIR = .depends
 AR = avr-ar
 ARFLAGS = cru
 CC = avr-gcc
-CFLAGS = -Wall -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__              \
+CFLAGS = -Wall -Wno-main -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__    \
          -DF_CPU=16000000
 CPPFLAGS = -MMD -MF $(DEPS_DIR)/$*.d
 LD = avr-ld

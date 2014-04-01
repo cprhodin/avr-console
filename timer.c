@@ -176,11 +176,13 @@ void schedule_timer_event(struct timer_event * this_timer_event, struct timer_ev
 
 void cancel_timer_event(struct timer_event * this_timer_event)
 {
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-    {
-        unlink_timer_event(this_timer_event);
+    if (!timer_is_expired(this_timer_event)) {
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+            unlink_timer_event(this_timer_event);
 
-        tbtimer_handler();
+            tbtimer_handler();
+        }
     }
 }
 

@@ -23,10 +23,10 @@
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
 
+#include "timer.h"
+#include "tick.h"
+
 #define MAX_PARMS (4)
-
-
-extern void console_init(void);
 
 
 enum {
@@ -34,6 +34,8 @@ enum {
     CMDID_READRAM,
     CMDID_READFLASH,
     CMDID_WRITERAM,
+    CMDID_TICKEN,
+    CMDID_TICKPER,
     CMDID_STOP,
     CMDID_START,
     CMDID_PUT,
@@ -185,6 +187,32 @@ void do_writeram(uint8_t nparm, uint32_t * parm)
     }
 }
 
+void do_ticken(uint8_t nparm, uint32_t * parm)
+{
+    if (nparm < 1) {
+        fputs_P(PSTR(
+            "\n"
+            "usage: te enable\n"
+            "\n"), stdout);
+        return;
+    }
+
+    tick_enable((uint8_t) parm[0]);
+}
+
+void do_tickper(uint8_t nparm, uint32_t * parm)
+{
+    if (nparm < 1) {
+        fputs_P(PSTR(
+            "\n"
+            "usage: tp period\n"
+            "\n"), stdout);
+        return;
+    }
+
+    tick_set_period(TBTICKS_FROM_MS(parm[0]));
+}
+
 void do_help(uint8_t nparm, uint32_t * parm)
 {
     fputs_P(PSTR(
@@ -195,6 +223,8 @@ void do_help(uint8_t nparm, uint32_t * parm)
         "  rr   - read RAM\n"
         "  rf   - read flash\n"
         "  wr   - write RAM\n"
+        "  te   - enable tick\n"
+        "  tp   - set tick period\n"
         "\n"), stdout);
 }
 
@@ -204,6 +234,8 @@ __attribute__((__progmem__)) void (* const cmdtbl[])(uint8_t, uint32_t *) = {
     [CMDID_READRAM]   = do_readram,
     [CMDID_READFLASH] = do_readflash,
     [CMDID_WRITERAM]  = do_writeram,
+    [CMDID_TICKEN]    = do_ticken,
+    [CMDID_TICKPER]   = do_tickper,
     [CMDID_STOP]      = exec_stop,
     [CMDID_START]     = exec_stub,
     [CMDID_PUT]       = exec_stub,
@@ -261,6 +293,8 @@ __attribute__((__progmem__)) void (* const cmdtbl[])(uint8_t, uint32_t *) = {
     action cmd_rr     { cmdid = CMDID_READRAM;   }
     action cmd_rf     { cmdid = CMDID_READFLASH; }
     action cmd_wr     { cmdid = CMDID_WRITERAM;  }
+    action cmd_te     { cmdid = CMDID_TICKEN;    }
+    action cmd_tp     { cmdid = CMDID_TICKPER;   }
     action cmd_quit   { cmdid = CMDID_QUIT;      }
     action cmd_return { cmdid = CMDID_RETURN;    }
     action cmd_rest   { cmdid = CMDID_REST;      }
@@ -275,6 +309,8 @@ __attribute__((__progmem__)) void (* const cmdtbl[])(uint8_t, uint32_t *) = {
         'rr'     %cmd_rr     |
         'rf'     %cmd_rf     |
         'wr'     %cmd_wr     |
+        'te'     %cmd_te     |
+        'tp'     %cmd_tp     |
         'quit'   %cmd_quit   |
         'return' %cmd_return |
         'rest'   %cmd_rest   |
@@ -307,11 +343,11 @@ static uint8_t cmdid;
 static uint8_t nparm;
 static uint32_t parm[MAX_PARMS];
 
-void cmdline(void) __attribute__((OS_main));
+void cmdline(void) __attribute__((__noreturn__));
 void cmdline(void)
 {
     uint8_t cs;
-    uint32_t acc;
+    uint32_t acc = 0;
 
     /* ragel initialization */
     %%write init;
