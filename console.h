@@ -14,18 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _PROJECT_H_
-#define _PROJECT_H_
-
-#include "bits.h"
-
-#ifndef BAUD
-#define BAUD (250000L)
-#endif
+#ifndef _CONSOLE_H_
+#define _CONSOLE_H_
 
 /*
- * initialize console before main
+ * Terminal attributes.
+ *
+ *  ICRNL     - Translate received CR to NL.
+ *  ECHO      - Echo received characters to transmitter.
+ *  ICANON    - Enable canonical mode processing.
+ *  INONBLOCK - Do not block until operation is complete.
+ *  ONLCR     - Translate transmitted NL to CR-NL.
  */
-void console_init(void) __attribute__((__constructor__));
+#define ICRNL     RB_SPARE0_MSK
+#define ECHO      RB_SPARE1_MSK
+#define ICANON    RB_SPARE2_MSK
+#define INONBLOCK RB_SPARE3_MSK
+#define ONLCR     (RB_SPARE3_MSK << 8)
 
-#endif /* _PROJECT_H_ */
+uint16_t console_getattr(void);
+void console_setattr(uint16_t attr);
+int console_putchar(char c, struct __file * stream);
+int console_getchar(struct __file * stream);
+void console_init(void);
+
+#endif /* _CONSOLE_H_ */

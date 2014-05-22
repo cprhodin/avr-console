@@ -18,6 +18,7 @@
 #define _LIBRB_H_
 
 #include <avr/io.h>
+#include "bits.h"
 
 /*
  * ring-buffer control stucture
@@ -33,39 +34,47 @@ struct ring_buffer {
 };
 
 /*
- * ring-buffer state flag bits
+ * ring-buffer flag bits
  */
 enum {
-    RB_CANTPUT_MSK = _BV(0),
-    RB_CANTECHO_MSK = _BV(1),
-    RB_CANTGET_MSK = _BV(2),
-    RB_SPARE0_MSK = _BV(3),
-    RB_SPARE1_MSK = _BV(4),
-    RB_SPARE2_MSK = _BV(5),
-    RB_SPARE3_MSK = _BV(6),
-    RB_SPARE4_MSK = _BV(7),
+    RB_CANTPUT      = 0,
+    RB_CANTECHO     = 1,
+    RB_CANTGET      = 2,
+    RB_SPARE0       = 3,
+    RB_SPARE1       = 4,
+    RB_SPARE2       = 5,
+    RB_SPARE3       = 6,
+    RB_SPARE4       = 7,
+    RB_CANTPUT_MSK  = _BV(RB_CANTPUT),
+    RB_CANTECHO_MSK = _BV(RB_CANTECHO),
+    RB_CANTGET_MSK  = _BV(RB_CANTGET),
+    RB_SPARE0_MSK   = _BV(RB_SPARE0),
+    RB_SPARE1_MSK   = _BV(RB_SPARE1),
+    RB_SPARE2_MSK   = _BV(RB_SPARE2),
+    RB_SPARE3_MSK   = _BV(RB_SPARE3),
+    RB_SPARE4_MSK   = _BV(RB_SPARE4),
 };
 
 /*
  * ring-buffer state
  */
-#define set_cantput(a) ((a)->flags |= RB_CANTPUT_MSK)
-#define clr_cantput(a) ((a)->flags &= ~RB_CANTPUT_MSK)
-#define rb_cantput(a) ((a)->flags & RB_CANTPUT_MSK)
-#define set_cantecho(a) ((a)->flags |= RB_CANTECHO_MSK)
-#define clr_cantecho(a) ((a)->flags &= ~RB_CANTECHO_MSK)
-#define rb_cantecho(a) ((a)->flags & RB_CANTECHO_MSK)
-#define set_cantget(a) ((a)->flags |= RB_CANTGET_MSK)
-#define clr_cantget(a) ((a)->flags &= ~RB_CANTGET_MSK)
-#define rb_cantget(a) ((a)->flags & RB_CANTGET_MSK)
-#define rb_empty(a) (rb_cantecho(a) && rb_cantget(a))
-#define rb_full(a) rb_cantput(a)
+#define rb_set_cantput(a)    set_bit((a)->flags,RB_CANTPUT)
+#define rb_clr_cantput(a)  clear_bit((a)->flags,RB_CANTPUT)
+#define rb_is_cantput(a)    test_bit((a)->flags,RB_CANTPUT)
+#define rb_set_cantecho(a)   set_bit((a)->flags,RB_CANTECHO)
+#define rb_clr_cantecho(a) clear_bit((a)->flags,RB_CANTECHO)
+#define rb_is_cantecho(a)   test_bit((a)->flags,RB_CANTECHO)
+#define rb_set_cantget(a)    set_bit((a)->flags,RB_CANTGET)
+#define rb_clr_cantget(a)  clear_bit((a)->flags,RB_CANTGET)
+#define rb_is_cantget(a)    test_bit((a)->flags,RB_CANTGET)
+#define rb_empty(a)     (rb_is_cantecho(a) && rb_is_cantget(a))
+#define rb_full(a)      rb_is_cantput(a)
 
 /*
  * clear ring-buffer
  */
 #define rb_clear(a) do {                                                       \
-    (a)->flags &= ~(RB_CANTECHO_MSK | RB_CANTGET_MSK);                         \
+    set_clear_bits((a)->flags,RB_CANTECHO_MSK|RB_CANTGET_MSK,RB_CANTPUT_MSK);  \
     (a)->get = (a)->echo = (a)->put = (a)->start;                              \
 } while (0)
 

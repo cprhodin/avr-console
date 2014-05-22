@@ -14,11 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _TICK_H_
-#define _TICK_H_
+#ifndef _BITS_H_
+#define _BITS_H_
 
-extern void tick_set_period(uint32_t period);
-extern void tick_enable(uint8_t enable);
-extern void tick_init(void);
+#define set_bits(a,b)         ((a)=(a)|(b))
+#define clear_bits(a,b)       ((a)=(a)&~(b))
+#define set_clear_bits(a,b,c) ((a)=((a)|(b))&~(c))
+#define set_field_bits(a,b,c) ((a)=((a)&~(b))|((b)&(c))) //a-reg, b-mask, c-value
+#define set_bits_cond(a,b,c)  set_field_bits((a),(b),(c)?(b):0)
+#define test_bits(a,b)        (((a)&(b))!=0)
+#define set_bit(a,b)          set_bits((a),_BV(b))
+#define clear_bit(a,b)        clear_bits((a),_BV(b))
+#define test_bit(a,b)         test_bits((a),_BV(b))
 
-#endif /* _TICK_H_ */
+#endif /* _BITS_H_ */

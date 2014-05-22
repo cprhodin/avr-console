@@ -17,32 +17,61 @@
 #include "project.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <ctype.h>
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
 
-#include "timer.h"
-#include "tick.h"
+#include "librb.h"
+#include "console.h"
 
+
+/*
+ * entry point for command line interpreter
+ */
 extern void cmdline(void);
 
 
 void main(void)
 {
+    uint16_t attr;
+
     /*
      * initialize
      */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        timebase_init();
-        tick_init();
-    }
+    ATOMIC_BLOCK(ATOMIC_FORCEON);
     /* interrupts are enabled */
 
     /*
-     * run command line interface
+     * console demo
      */
-    cmdline();
+    printf_P(PSTR("\n\navr-console, canonical input processing\n\n"));
+
+    /*
+     * display console attributes in an stty like way
+     */
+    attr = console_getattr();
+    printf_P(PSTR("stty: %cicrnl %cecho %cicanon %cinonblock %conlcr\n\n"),
+             (attr & ICRNL)    ?'+':'-',
+             (attr & ECHO)     ?'+':'-',
+             (attr & ICANON)   ?'+':'-',
+             (attr & INONBLOCK)?'+':'-',
+             (attr & ONLCR)    ?'+':'-');
+
+    /*
+     * echo back whatever you type with line-editing
+     */
+    for (;;)
+    {
+        printf_P(PSTR("\nInput: "));
+
+        for (;;)
+        {
+            int c = getchar();
+
+            if (c >= 0)
+            {
+                putchar(c);
+                if (c == '\n') break;
+            }
+        }
+    }
 }
