@@ -2,20 +2,26 @@ avr-console
 ===========
 
 Description:
+
     Serial I/O with stdio-like canonical processing.  Canonical processing means
     no input is available until the user presses "Return" and some limited line
     editing can be done before that.  To erase the last character press
     "Backspace" to kill the entire line press "Cntl-U".
 
 Target device(s):
+
     ATmega328P
+    
     Arduino Nano
 
 Toolchain:
+
     gcc version 4.7.2 (AVR_8_bit_GNU_Toolchain_3.4.2_939)
+    
     avr-libc-1.8.0
 
 Programming tool:
+
     AVRISP mkII
 
 How to build (Linux 64-bit system):
