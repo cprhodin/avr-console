@@ -3,7 +3,7 @@ avr-console
 
 Description:
 
-    Serial I/O with stdio-like canonical processing.  Canonical processing means no input is available until the user presses "Return" and some limited line editing can be done before that.  To erase the last character press "Backspace" to kill the entire line press "Cntl-U".
+Serial I/O with stdio-like canonical processing.  Canonical processing means no input is available until the user presses "Return" and some limited line editing can be done before that.  To erase the last character press "Backspace" to kill the entire line press "Cntl-U".
 
 Target device(s):
 
