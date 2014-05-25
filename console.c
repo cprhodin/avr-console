@@ -16,22 +16,24 @@
  */
 #include "project.h"
 
-#include <stdio.h>
 #include <avr/io.h>
-#include <util/setbaud.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/setbaud.h>
+#include <stdio.h>
+#include <util/atomic.h>
 
 #include "librb.h"
+#include "console.h"
 
 /*
  * Special characters recognized for translation and processing.
  */
-#define CR      ('\r')          // carriage return
-#define ERASE   ('\b')          // backspace
-#define KILL    ('U' & ~0x40)   // ctrl-U
-#define NL      ('\n')          // newline (line feed)
-#define SPACE   (' ')           // space
+#define CR      ('\r')          /* carriage return     */
+#define ERASE   ('\b')          /* backspace           */
+#define KILL    ('U' & ~0x40)   /* ctrl-U              */
+#define NL      ('\n')          /* newline (line feed) */
+#define SPACE   (' ')           /* space               */
 
 /*
  * Transmit and receive ring-buffers.
@@ -48,84 +50,76 @@ static struct ring_buffer tx_rb;
 static struct ring_buffer rx_rb;
 
 /*
+ * Terminal attributes.
+ *
+ *  ICRNL     - Translate received CR to NL.
+ *  ECHO      - Echo received characters to transmitter.
+ *  ICANON    - Enable canonical mode processing.
+ *  INONBLOCK - Do not block until operation is complete.
+ *  ONLCR     - Translate transmitted NL to CR-NL.
+ */
+#define ATTR_MASK (ICRNL | ECHO | ICANON | INONBLOCK | ONLCR)
+
+/* Rx attributes */
+#define is_icrnl()     test_bits(rx_rb.flags,ICRNL)
+#define is_echo()      test_bits(rx_rb.flags,ECHO)
+#define is_icanon()    test_bits(rx_rb.flags,ICANON)
+#define is_inonblock() test_bits(rx_rb.flags,INONBLOCK)
+
+/* Tx attributes */
+#define is_onlcr() test_bits(tx_rb.flags,ONLCR >> 8)
+
+/*
+ * Internal state variables used for I/O translation and processing.
+ */
+#define set_onlcr_state()    set_bits(tx_rb.flags,RB_SPARE0_MSK)
+#define clr_onlcr_state()  clear_bits(tx_rb.flags,RB_SPARE0_MSK)
+#define is_onlcr_state()    test_bits(tx_rb.flags,RB_SPARE0_MSK)
+#define set_erase_state1()   set_bits(tx_rb.flags,RB_SPARE1_MSK)
+#define set_erase_state2()   set_bits(tx_rb.flags,RB_SPARE2_MSK)
+#define clr_erase_state()  clear_bits(tx_rb.flags,RB_SPARE1_MSK|RB_SPARE2_MSK)
+#define is_erase_state1()   test_bits(tx_rb.flags,RB_SPARE1_MSK)
+#define is_erase_state2()   test_bits(tx_rb.flags,RB_SPARE2_MSK)
+
+/*
  * Used in canonical mode to mark the beginning of the current line.
  */
 static uint8_t * volatile line_start;
 
 /*
- * Internal state variables used for I/O translation and processing.
+ * Count of echoed characters to be erased with BS-SP-BS sequence.
  */
-#define set_onlcr_state() (tx_rb.flags |= RB_SPARE0_MSK)
-#define clr_onlcr_state() (tx_rb.flags &= ~RB_SPARE0_MSK)
-#define is_onlcr_state() (tx_rb.flags & RB_SPARE0_MSK)
-#define set_erase_state1() (tx_rb.flags |= RB_SPARE1_MSK)
-#define set_erase_state2() (tx_rb.flags |= RB_SPARE2_MSK)
-#define clr_erase_state() (tx_rb.flags &= ~(RB_SPARE1_MSK | RB_SPARE2_MSK))
-#define is_erase_state1() (tx_rb.flags & RB_SPARE1_MSK)
-#define is_erase_state2() (tx_rb.flags & RB_SPARE2_MSK)
-
-/*
- * Terminal attributes.
- */
-#define set_icrnl() (rx_rb.flags |= RB_SPARE0_MSK)      // translate received CR to NL
-#define clr_icrnl() (rx_rb.flags &= ~RB_SPARE0_MSK)
-#define is_icrnl() (rx_rb.flags & RB_SPARE0_MSK)
-#define set_onlcr() (rx_rb.flags |= RB_SPARE1_MSK)      // translate transmitted NL to CR-NL
-#define clr_onlcr() (rx_rb.flags &= ~RB_SPARE1_MSK)
-#define is_onlcr() (rx_rb.flags & RB_SPARE1_MSK)
-#define set_echo() (rx_rb.flags |= RB_SPARE2_MSK)       // echo received characters to transmitter
-#define clr_echo() (rx_rb.flags &= ~RB_SPARE2_MSK)
-#define is_echo() (rx_rb.flags & RB_SPARE2_MSK)
-#define set_icanon() (rx_rb.flags |= RB_SPARE3_MSK)     // enable canonical mode processing
-#define clr_icanon() (rx_rb.flags &= ~RB_SPARE3_MSK)
-#define is_icanon() (rx_rb.flags & RB_SPARE3_MSK)
-#define set_inonblock() (rx_rb.flags |= RB_SPARE4_MSK)  // block until operation is complete
-#define clr_inonblock() (rx_rb.flags &= ~RB_SPARE4_MSK)
-#define is_inonblock() (rx_rb.flags & RB_SPARE4_MSK)
-
-
 static uint8_t erase_count;
 
-
 /*
- * Enable transmitter.
+ * Enable transmitter and transmit buffer empty interrupt.
  */
-#define tx_enable() do {                                                       \
-    UCSR0B = (UCSR0B & ~_BV(TXCIE0)) | (_BV(UDRIE0) | _BV(TXEN0));             \
-} while (0)
+#define tx_enable() set_clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXEN0),_BV(TXCIE0))
 
 /*
  * Enable transmit complete interrupt.
  */
-#define tx_complete() do {                                                     \
-    UCSR0B = (UCSR0B & ~_BV(UDRIE0)) | (_BV(TXCIE0) | _BV(TXEN0));             \
-} while (0)
+#define tx_complete() set_clear_bits(UCSR0B,_BV(TXCIE0)|_BV(TXEN0),_BV(UDRIE0))
 
 /*
  * Disable transmitter.
  */
-#define tx_disable() do {                                                      \
-    UCSR0B &= ~(_BV(UDRIE0) | _BV(TXCIE0) | _BV(TXEN0));                       \
-} while (0)
-
+#define tx_disable() clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXCIE0)|_BV(TXEN0))
 
 /*
  * Enable receiver.
  */
-#define rx_enable() do {                                                       \
-    UCSR0B = UCSR0B | (_BV(RXEN0) | _BV(RXCIE0));                              \
-} while (0)
+#define rx_enable() set_bits(UCSR0B,_BV(RXEN0)|_BV(RXCIE0))
 
 /*
- * Disable receiver (interrupt).
+ * Disable receive buffer full interrupt.
  */
-#define rx_disable() do {                                                      \
-    UCSR0B = UCSR0B & ~_BV(RXCIE0);                                            \
-} while (0)
+#define rx_disable() clear_bits(UCSR0B,_BV(RXCIE0))
 
 
 /*
- * Tx complete interrupt handler
+ * Tx complete interrupt handler.  Last transmission is complete and transmit
+ * ring buffer is empty.
  */
 ISR(USART_TX_vect)
 {
@@ -134,7 +128,8 @@ ISR(USART_TX_vect)
 
 
 /*
- * Tx data register empty interrupt handler
+ * Tx data register empty interrupt handler.  Transmitter can accept data and
+ * transmit data available.
  */
 ISR(USART_UDRE_vect)
 {
@@ -188,7 +183,14 @@ ISR(USART_UDRE_vect)
      */
     UDR0 = c;
 
-    if (rb_cantget(&tx_rb) && rb_cantecho(&rx_rb) &&
+    /*
+     * Test for additional transmit data.
+     *  1. Transmit ring buffer not empty.
+     *  2. Receive ring buffer holds characters to be echoed.
+     *  3. Uncompleted erase sequence.
+     *  4. Uncompleted NL to CR-NL translation.
+     */
+    if (rb_is_cantget(&tx_rb) && rb_is_cantecho(&rx_rb) &&
         !erase_count && !is_onlcr_state()) {
         tx_complete();
     }
@@ -264,14 +266,34 @@ ISR(USART_RX_vect)
      */
     if (c == NL) line_start = rx_rb.put;
 
+    /*
+     * If receive ring buffer is full disable receiver interrupt.
+     */
     if (rb_full(&rx_rb)) rx_disable();
 }
 
 
+uint16_t console_getattr(void)
+{
+    return (((uint16_t) tx_rb.flags << 8) | rx_rb.flags) & ATTR_MASK;
+}
+
+
+void console_setattr(uint16_t attr)
+{
+    attr &= ATTR_MASK;
+
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+        tx_rb.flags = (tx_rb.flags & ~(ATTR_MASK >> 8)) | (attr >> 8);
+        rx_rb.flags = (tx_rb.flags & ~ATTR_MASK) | attr;
+    }
+}
+
+
 /*
- * putchar
+ * putchar, this call always blocks until space is available in the buffer
  */
-static int console_putchar(char c, struct __file * stream)
+int console_putchar(char c, struct __file * stream)
 {
     for (;;) {
         cli();
@@ -293,9 +315,9 @@ static int console_putchar(char c, struct __file * stream)
 
 
 /*
- * getchar
+ * getchar, this call can be blocking or non-blocking
  */
-static int console_getchar(struct __file * stream)
+int console_getchar(struct __file * stream)
 {
     char c;
 
@@ -329,14 +351,16 @@ static int console_getchar(struct __file * stream)
 }
 
 
+/*
+ * Initialize FILE structure for console device.
+ */
 static FILE console = FDEV_SETUP_STREAM(console_putchar, console_getchar,
                                         _FDEV_SETUP_RW);
 
 /*
  * Initialize console interface. Must be called with interrupts disabled.
  */
-static void console_init(void) __attribute__((__constructor__));
-static void console_init(void)
+void console_init(void)
 {
     /*
      * Initialize the transmit and receive ring buffers.
@@ -359,11 +383,7 @@ static void console_init(void)
     /*
      * Default attributes.
      */
-    set_icrnl();
-    set_onlcr();
-    set_echo();
-    set_icanon();
-    clr_inonblock();
+    console_setattr(ICRNL | ECHO | ICANON | ONLCR);
 
     /*
      * Attach standard I/O to this console.

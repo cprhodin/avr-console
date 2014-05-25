@@ -16,3 +16,14 @@
 *.exe
 *.out
 *.app
+
+.depends
+.objects
+
+*.rl.dot
+*.rl.ps
+
+avr-console
+cmdline.c
+/librb.h
+

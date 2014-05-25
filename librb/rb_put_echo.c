@@ -34,10 +34,10 @@ int8_t rb_put_echo(struct ring_buffer * rb, volatile uint8_t const * const b)
 {
     uint8_t * put;
 
-    if (rb_cantput(rb)) return -1;
+    if (rb_is_cantput(rb)) return -1;
 
     /* byte will be available for echo */
-    clr_cantecho(rb);
+    rb_clr_cantecho(rb);
 
     /* add byte, update pointer */
     put = rb->put;
@@ -47,7 +47,7 @@ int8_t rb_put_echo(struct ring_buffer * rb, volatile uint8_t const * const b)
 
     if (put == rb->get) {
         /* no more space on exit */
-        set_cantput(rb);
+        rb_set_cantput(rb);
         return 0;
     }
 

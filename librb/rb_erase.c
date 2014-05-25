@@ -34,7 +34,7 @@ uint8_t rb_erase(struct ring_buffer * const rb)
     if (rb_empty(rb)) return 0;
 
     /* space will be available for put */
-    clr_cantput(rb);
+    rb_clr_cantput(rb);
 
     /* update pointer */
     put = rb->put;
@@ -42,14 +42,14 @@ uint8_t rb_erase(struct ring_buffer * const rb)
     rb->put = put;
 
     /* if can't echo on entry we backed over an echoed byte */
-    if (rb_cantecho(rb)) {
+    if (rb_is_cantecho(rb)) {
         rb->echo = put;
-        if (put == rb->get) set_cantget(rb);
+        if (put == rb->get) rb_set_cantget(rb);
 
         return 1;
     }
 
-    if (put == rb->echo) set_cantecho(rb);
+    if (put == rb->echo) rb_set_cantecho(rb);
 
     return 0;
 }

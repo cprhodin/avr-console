@@ -33,21 +33,23 @@ uint8_t rb_kill(struct ring_buffer * const rb, uint8_t * p)
     uint8_t unecho = 0;
     uint8_t s = rb->limit - rb->start;
 
+    /* unwrap the buffer pointers relative to get */
     if (p < rb->get) p += s;
-    if (rb_cantput(rb) || (put < rb->get)) put += s;
-    if (!rb_cantget(rb) && (echo <= rb->get)) echo += s;
+    if (rb_is_cantput(rb) || (put < rb->get)) put += s;
+    if (!rb_is_cantget(rb) && (echo <= rb->get)) echo += s;
 
     if (p < put) {
-        clr_cantput(rb);
+        rb_clr_cantput(rb);
         put = p;
         if (p < echo) {
             unecho = echo - p;
             echo = p;
-            if (rb->get == p) set_cantget(rb);
+            if (rb->get == p) rb_set_cantget(rb);
         }
-        if (echo == p) set_cantecho(rb);
+        if (echo == p) rb_set_cantecho(rb);
     }
 
+    /* wrap the buffer pointers */
     if (put >= rb->limit) put -= s;
     if (echo >= rb->limit) echo -= s;
 
