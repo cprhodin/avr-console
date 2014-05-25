@@ -44,11 +44,11 @@ void main(void)
      */
     attr = console_getattr();
     printf_P(PSTR("stty: %cicrnl %cecho %cicanon %cinonblock %conlcr\n\n"),
-             (attr & ICRNL)    ?' ':'-',
-             (attr & ECHO)     ?' ':'-',
-             (attr & ICANON)   ?' ':'-',
-             (attr & INONBLOCK)?' ':'-',
-             (attr & ONLCR)    ?' ':'-');
+             (attr & ICRNL)     ? ' ' : '-',
+             (attr & ECHO)      ? ' ' : '-',
+             (attr & ICANON)    ? ' ' : '-',
+             (attr & INONBLOCK) ? ' ' : '-',
+             (attr & ONLCR)     ? ' ' : '-');
 
     /*
      * echo back whatever you type with line-editing

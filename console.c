@@ -93,7 +93,7 @@ static uint8_t erase_count;
 /*
  * Enable transmitter and transmit buffer empty interrupt.
  */
-#define tx_enable()   set_clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXEN0),_BV(TXCIE0))
+#define tx_enable() set_clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXEN0),_BV(TXCIE0))
 
 /*
  * Enable transmit complete interrupt.
@@ -103,17 +103,17 @@ static uint8_t erase_count;
 /*
  * Disable transmitter.
  */
-#define tx_disable()      clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXCIE0)|_BV(TXEN0))
+#define tx_disable() clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXCIE0)|_BV(TXEN0))
 
 /*
  * Enable receiver.
  */
-#define rx_enable()         set_bits(UCSR0B,_BV(RXEN0)|_BV(RXCIE0))
+#define rx_enable() set_bits(UCSR0B,_BV(RXEN0)|_BV(RXCIE0))
 
 /*
  * Disable receive buffer full interrupt.
  */
-#define rx_disable()      clear_bits(UCSR0B,_BV(RXCIE0))
+#define rx_disable() clear_bits(UCSR0B,_BV(RXCIE0))
 
 
 /*
@@ -187,7 +187,7 @@ ISR(USART_UDRE_vect)
      *  1. Transmit ring buffer not empty.
      *  2. Receive ring buffer holds characters to be echoed.
      *  3. Uncompleted erase sequence.
-     *  4. uncompleted NL to CR-NL translation.
+     *  4. Uncompleted NL to CR-NL translation.
      */
     if (rb_is_cantget(&tx_rb) && rb_is_cantecho(&rx_rb) &&
         !erase_count && !is_onlcr_state()) {
@@ -282,8 +282,10 @@ void console_setattr(uint16_t attr)
 {
     attr &= ATTR_MASK;
 
-    tx_rb.flags = (tx_rb.flags & ~(ATTR_MASK >> 8)) | (attr >> 8);
-    rx_rb.flags = (tx_rb.flags & ~ATTR_MASK) | attr;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+        tx_rb.flags = (tx_rb.flags & ~(ATTR_MASK >> 8)) | (attr >> 8);
+        rx_rb.flags = (tx_rb.flags & ~ATTR_MASK) | attr;
+    }
 }
 
 
