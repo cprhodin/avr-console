@@ -21,6 +21,7 @@
 #include <avr/sleep.h>
 #include <util/setbaud.h>
 #include <stdio.h>
+#include <util/atomic.h>
 
 #include "librb.h"
 #include "console.h"
