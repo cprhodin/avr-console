@@ -24,6 +24,7 @@
 *.rl.ps
 
 avr-console
+avr-console.dump
 cmdline.c
 /librb.h
 

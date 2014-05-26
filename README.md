@@ -1,9 +1,9 @@
-avr-console
-===========
+avr-console-commandline
+=======================
 
 Description:
 
-Serial I/O with stdio-like canonical processing.  Canonical processing means no input is available until the user presses "Return" and some limited line editing can be done before that.  To erase the last character press "Backspace" to kill the entire line press "Cntl-U".
+AVR Console with Ragel command interpreter and three commands implemented.
 
 Target device(s):
 
@@ -33,3 +33,5 @@ How to run (Linux 64-bit system):
 
     $setserial /dev/ttyUSB0 spd_cust divisor 96 # make 38.4K into 250K
     $minicom -D /dev/ttyUSB0 -b 38400
+
+    Type "help" for a list of commands.
