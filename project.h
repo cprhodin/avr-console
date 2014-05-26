@@ -28,4 +28,10 @@
  */
 void console_init(void) __attribute__((__constructor__));
 
+/*
+ * these functions never return
+ */
+void main(void) __attribute__((__noreturn__));
+void cmdline(void) __attribute__((__noreturn__));
+
 #endif /* _PROJECT_H_ */

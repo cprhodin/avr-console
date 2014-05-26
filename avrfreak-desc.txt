@@ -10,7 +10,7 @@ ICANON    - Enable canonical mode processing.
 INONBLOCK - Do not block until operation is complete.
 ONLCR     - Translate transmitted NL to CR-NL.
 
-By default the only attribute not set is INONBLOCK.  This means a call to getchar() will wait for you to enter something.  With INONBLOCK set, a call to getchar() will return _FDEV_EOF (-2) when nothing is available.
+By default the only attribute not set is INONBLOCK.  This means a call to getchar() will wait for you to enter something.  With INONBLOCK set, a call to getchar() will return EOF (-1) when nothing is available.
 
 Setting the terminal attributes to 0 disables the extra processing and leaves you with a buffered, interrupt driven serial interface.
 

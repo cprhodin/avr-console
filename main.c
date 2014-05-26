@@ -20,8 +20,8 @@
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
 
-#include "librb.h"
 #include "console.h"
+
 
 /*
  * entry point for command line interpreter
@@ -31,8 +31,6 @@ extern void cmdline(void);
 
 void main(void)
 {
-    uint16_t attr;
-
     /*
      * initialize
      */
@@ -40,20 +38,16 @@ void main(void)
     /* interrupts are enabled */
 
     /*
-     * console demo
+     * console-commandline demo
      */
-    printf_P(PSTR("\n\navr-console, canonical input processing\n\n"));
-
-    /*
-     * display console attributes in an stty like way
-     */
-    attr = console_getattr();
-    printf_P(PSTR("stty: %cicrnl %cecho %cicanon %cinonblock %conlcr\n\n"),
-             (attr & ICRNL)     ? ' ' : '-',
-             (attr & ECHO)      ? ' ' : '-',
-             (attr & ICANON)    ? ' ' : '-',
-             (attr & INONBLOCK) ? ' ' : '-',
-             (attr & ONLCR)     ? ' ' : '-');
+    printf_P(PSTR(
+        "\n\n"
+        "###############################\n"
+        "#\n"
+        "# AVR console-commandline demo.\n"
+        "#\n"
+        "###############################\n"
+        "\n"));
 
     /*
      * run command line interface

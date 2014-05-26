@@ -2,7 +2,7 @@
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile project.h main.c librb.h librb.a console.c #cmdline.rl
+MANIFEST = Makefile project.h main.c librb.h librb.a console.c cmdline.rl
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
