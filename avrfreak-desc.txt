@@ -1,6 +1,5 @@
 AVR Console with Ragel command interpreter and three commands implemented.
 
-
 Target device(s):
 
 ATmega328P
@@ -9,8 +8,8 @@ Arduino Nano
 Resources:
 
 USART0, pins, interrupts
-1.5KB ROM
-109B RAM
+3.8KB ROM
+127B RAM
 
 Toolchain:
 
