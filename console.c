@@ -16,12 +16,11 @@
  */
 #include "project.h"
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
+//#include <avr/io.h>
 #include <avr/sleep.h>
 #include <util/setbaud.h>
-#include <stdio.h>
 #include <util/atomic.h>
+#include <stdio.h>
 
 #include "librb.h"
 #include "console.h"
@@ -61,25 +60,25 @@ static struct ring_buffer rx_rb;
 #define ATTR_MASK (ICRNL | ECHO | ICANON | INONBLOCK | ONLCR)
 
 /* Rx attributes */
-#define is_icrnl()     test_bits(rx_rb.flags,ICRNL)
-#define is_echo()      test_bits(rx_rb.flags,ECHO)
-#define is_icanon()    test_bits(rx_rb.flags,ICANON)
-#define is_inonblock() test_bits(rx_rb.flags,INONBLOCK)
+#define is_icrnl()     test_bits(&rx_rb.flags,ICRNL)
+#define is_echo()      test_bits(&rx_rb.flags,ECHO)
+#define is_icanon()    test_bits(&rx_rb.flags,ICANON)
+#define is_inonblock() test_bits(&rx_rb.flags,INONBLOCK)
 
 /* Tx attributes */
-#define is_onlcr() test_bits(tx_rb.flags,ONLCR >> 8)
+#define is_onlcr() test_bits(&tx_rb.flags,ONLCR >> 8)
 
 /*
  * Internal state variables used for I/O translation and processing.
  */
-#define set_onlcr_state()    set_bits(tx_rb.flags,RB_SPARE0_MSK)
-#define clr_onlcr_state()  clear_bits(tx_rb.flags,RB_SPARE0_MSK)
-#define is_onlcr_state()    test_bits(tx_rb.flags,RB_SPARE0_MSK)
-#define set_erase_state1()   set_bits(tx_rb.flags,RB_SPARE1_MSK)
-#define set_erase_state2()   set_bits(tx_rb.flags,RB_SPARE2_MSK)
-#define clr_erase_state()  clear_bits(tx_rb.flags,RB_SPARE1_MSK|RB_SPARE2_MSK)
-#define is_erase_state1()   test_bits(tx_rb.flags,RB_SPARE1_MSK)
-#define is_erase_state2()   test_bits(tx_rb.flags,RB_SPARE2_MSK)
+#define set_onlcr_state()    set_bits(&tx_rb.flags,RB_SPARE0_MSK)
+#define clr_onlcr_state()  clear_bits(&tx_rb.flags,RB_SPARE0_MSK)
+#define is_onlcr_state()    test_bits(&tx_rb.flags,RB_SPARE0_MSK)
+#define set_erase_state1()   set_bits(&tx_rb.flags,RB_SPARE1_MSK)
+#define set_erase_state2()   set_bits(&tx_rb.flags,RB_SPARE2_MSK)
+#define clr_erase_state()  clear_bits(&tx_rb.flags,RB_SPARE1_MSK|RB_SPARE2_MSK)
+#define is_erase_state1()   test_bits(&tx_rb.flags,RB_SPARE1_MSK)
+#define is_erase_state2()   test_bits(&tx_rb.flags,RB_SPARE2_MSK)
 
 /*
  * Used in canonical mode to mark the beginning of the current line.
@@ -94,27 +93,27 @@ static uint8_t erase_count;
 /*
  * Enable transmitter and transmit buffer empty interrupt.
  */
-#define tx_enable() set_clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXEN0),_BV(TXCIE0))
+#define tx_enable() set_clear_bits(&UCSR0B,_BV(UDRIE0)|_BV(TXEN0),_BV(TXCIE0))
 
 /*
  * Enable transmit complete interrupt.
  */
-#define tx_complete() set_clear_bits(UCSR0B,_BV(TXCIE0)|_BV(TXEN0),_BV(UDRIE0))
+#define tx_complete() set_clear_bits(&UCSR0B,_BV(TXCIE0)|_BV(TXEN0),_BV(UDRIE0))
 
 /*
  * Disable transmitter.
  */
-#define tx_disable() clear_bits(UCSR0B,_BV(UDRIE0)|_BV(TXCIE0)|_BV(TXEN0))
+#define tx_disable() clear_bits(&UCSR0B,_BV(UDRIE0)|_BV(TXCIE0)|_BV(TXEN0))
 
 /*
  * Enable receiver.
  */
-#define rx_enable() set_bits(UCSR0B,_BV(RXEN0)|_BV(RXCIE0))
+#define rx_enable() set_bits(&UCSR0B,_BV(RXEN0)|_BV(RXCIE0))
 
 /*
  * Disable receive buffer full interrupt.
  */
-#define rx_disable() clear_bits(UCSR0B,_BV(RXCIE0))
+#define rx_disable() clear_bits(&UCSR0B,_BV(RXCIE0))
 
 
 /*
@@ -285,7 +284,7 @@ void console_setattr(uint16_t attr)
 
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
         tx_rb.flags = (tx_rb.flags & ~(ATTR_MASK >> 8)) | (attr >> 8);
-        rx_rb.flags = (tx_rb.flags & ~ATTR_MASK) | attr;
+        rx_rb.flags = (rx_rb.flags & ~ATTR_MASK) | attr;
     }
 }
 
@@ -350,6 +349,19 @@ int console_getchar(struct __file * stream)
     return c;
 }
 
+void testprt(void)
+{
+    printf("\n\n"
+           "rx_rb:\n"
+           " start: 0x%04x\n"
+           " limit: 0x%04x\n"
+           " put:   0x%04x\n"
+           " echo:  0x%04x\n"
+           " get:   0x%04x\n"
+           " flags: 0x%02x\n",
+           (uint16_t) rx_rb.start, (uint16_t) rx_rb.limit, (uint16_t) rx_rb.put,
+           (uint16_t) rx_rb.echo, (uint16_t) rx_rb.get, (uint16_t) rx_rb.flags);
+}
 
 /*
  * Initialize FILE structure for console device.
@@ -408,4 +420,6 @@ void console_init(void)
      * Turn on the receiver, the transmitter remains off until needed.
      */
     rx_enable();
+
+//    testprt();
 }

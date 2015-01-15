@@ -32,10 +32,9 @@
 #define INONBLOCK RB_SPARE3_MSK
 #define ONLCR     (RB_SPARE3_MSK << 8)
 
-uint16_t console_getattr(void);
-void console_setattr(uint16_t attr);
-int console_putchar(char c, struct __file * stream);
-int console_getchar(struct __file * stream);
-void console_init(void);
+extern uint16_t console_getattr(void);
+extern void console_setattr(uint16_t attr);
+extern int console_putchar(char c, struct __file * stream);
+extern int console_getchar(struct __file * stream);
 
 #endif /* _CONSOLE_H_ */

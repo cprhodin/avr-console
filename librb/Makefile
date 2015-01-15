@@ -3,8 +3,8 @@
 
 TARGETS = librb.a
 
-MANIFEST = Makefile librb.h rb_echo.c rb_erase.c rb_get.c rb_init.c rb_kill.c  \
-           rb_put.c rb_put_echo.c rb_unput.c
+MANIFEST = Makefile bits.h librb.h rb_echo.c rb_erase.c rb_get.c rb_init.c     \
+           rb_kill.c rb_put.c rb_put_echo.c rb_unput.c
 
 LIBRARIES =
 
@@ -62,7 +62,7 @@ vars :
 	@echo C_SRC_DEPS = $(C_SRC_DEPS)
 
 %.tab.c %.tab.h %.output : %.y
-	$(YACC) --output=$*.tab.c --defines=$*.tab.h --report-file=$*.output   \
+	$(YACC) --output=$*.tab.c --defines=$*.tab.h --report-file=$*.output       \
 	        --verbose $<
 
 %.yy.c %.yy.h : %.l
@@ -88,7 +88,7 @@ $(C_SRC_DEPS) : $(DEPS_DIR)/%.d :
 
 .PHONY : clean
 clean :
-	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(L_C_SRCS)       \
+	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(L_C_SRCS)           \
 	                  $(L_C_HDRS) $(Y_C_SRCS) $(Y_C_HDRS) $(Y_OUTPUTS)
 	-@rmdir 2> /dev/null $(OBJS_DIR)
 	-@rmdir 2> /dev/null $(DEPS_DIR)

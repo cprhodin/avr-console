@@ -17,14 +17,79 @@
 #ifndef _BITS_H_
 #define _BITS_H_
 
-#define set_bits(a,b)         ((a)=(a)|(b))
-#define clear_bits(a,b)       ((a)=(a)&~(b))
-#define set_clear_bits(a,b,c) ((a)=((a)|(b))&~(c))
-#define set_field_bits(a,b,c) ((a)=((a)&~(b))|((b)&(c))) //a-reg, b-mask, c-value
+#define _BVl(a) (1UL<<(a))
+
 #define set_bits_cond(a,b,c)  set_field_bits((a),(b),(c)?(b):0)
-#define test_bits(a,b)        (((a)&(b))!=0)
-#define set_bit(a,b)          set_bits((a),_BV(b))
-#define clear_bit(a,b)        clear_bits((a),_BV(b))
-#define test_bit(a,b)         test_bits((a),_BV(b))
+
+static __inline uint8_t test_bits(uint8_t volatile * const address,
+                                  uint8_t test_data)
+{
+    return *address & test_data;
+}
+
+static __inline uint8_t test_bit(uint8_t volatile * const address, uint8_t bit)
+{
+    return *address & _BV(bit);
+}
+
+static __inline uint8_t set_bits(uint8_t volatile * const address,
+                                 uint8_t set_data)
+{
+    uint8_t initial_value;
+
+    initial_value = *address;
+    *address = initial_value | set_data;
+
+    return initial_value;
+}
+
+static __inline uint8_t set_bit(uint8_t volatile * const address, uint8_t bit)
+{
+    return set_bits(address, _BV(bit));
+}
+
+static __inline uint8_t clear_bits(uint8_t volatile * const address,
+                                   uint8_t clear_data)
+{
+    uint8_t initial_value;
+
+    initial_value = *address;
+    *address = initial_value & ~clear_data;
+
+    return initial_value;
+}
+
+static __inline uint8_t clear_bit(uint8_t volatile * const address, uint8_t bit)
+{
+    return clear_bits(address, _BV(bit));
+}
+
+static __inline uint8_t set_clear_bits(uint8_t volatile * const address,
+                                       uint8_t set_data, uint8_t clear_data)
+{
+    uint8_t initial_value;
+
+    initial_value = *address;
+    *address = (initial_value & ~clear_data) | set_data;
+
+    return initial_value;
+}
+
+/*
+ * Read an eight bit location and replace the bits defined by "field_mask" with
+ * the bits from "value".  Returns the initial value stored at location.  This
+ * API is used to update a field and save the initial value for later
+ * restoration.
+ */
+static __inline uint8_t set_field_bits(uint8_t volatile * const address,
+                                       uint8_t field_mask, uint8_t data)
+{
+    uint8_t initial_value;
+
+    initial_value = *address;
+    *address = (initial_value & ~field_mask) | (data & field_mask);
+
+    return initial_value;
+}
 
 #endif /* _BITS_H_ */

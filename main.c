@@ -16,25 +16,29 @@
  */
 #include "project.h"
 
-#include <stdio.h>
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
+#include <stdio.h>
 
-#include "console.h"
-
+#include "timer.h"
 
 /*
- * entry point for command line interpreter
+ * initializers
  */
-extern void cmdline(void);
-
+extern void led_init(void);
+extern void adc_init(void);
 
 void main(void)
 {
     /*
      * initialize
      */
-    ATOMIC_BLOCK(ATOMIC_FORCEON);
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+        timebase_init();
+        led_init();
+        adc_init();
+    }
     /* interrupts are enabled */
 
     /*
@@ -49,8 +53,6 @@ void main(void)
         "###############################\n"
         "\n"));
 
-    /*
-     * run command line interface
-     */
+    /*run command line interface */
     cmdline();
 }

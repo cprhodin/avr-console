@@ -58,15 +58,15 @@ enum {
 /*
  * ring-buffer state
  */
-#define rb_set_cantput(a)    set_bit((a)->flags,RB_CANTPUT)
-#define rb_clr_cantput(a)  clear_bit((a)->flags,RB_CANTPUT)
-#define rb_is_cantput(a)    test_bit((a)->flags,RB_CANTPUT)
-#define rb_set_cantecho(a)   set_bit((a)->flags,RB_CANTECHO)
-#define rb_clr_cantecho(a) clear_bit((a)->flags,RB_CANTECHO)
-#define rb_is_cantecho(a)   test_bit((a)->flags,RB_CANTECHO)
-#define rb_set_cantget(a)    set_bit((a)->flags,RB_CANTGET)
-#define rb_clr_cantget(a)  clear_bit((a)->flags,RB_CANTGET)
-#define rb_is_cantget(a)    test_bit((a)->flags,RB_CANTGET)
+#define rb_set_cantput(a)    set_bit(&(a)->flags,RB_CANTPUT)
+#define rb_clr_cantput(a)  clear_bit(&(a)->flags,RB_CANTPUT)
+#define rb_is_cantput(a)    test_bit(&(a)->flags,RB_CANTPUT)
+#define rb_set_cantecho(a)   set_bit(&(a)->flags,RB_CANTECHO)
+#define rb_clr_cantecho(a) clear_bit(&(a)->flags,RB_CANTECHO)
+#define rb_is_cantecho(a)   test_bit(&(a)->flags,RB_CANTECHO)
+#define rb_set_cantget(a)    set_bit(&(a)->flags,RB_CANTGET)
+#define rb_clr_cantget(a)  clear_bit(&(a)->flags,RB_CANTGET)
+#define rb_is_cantget(a)    test_bit(&(a)->flags,RB_CANTGET)
 #define rb_empty(a)     (rb_is_cantecho(a) && rb_is_cantget(a))
 #define rb_full(a)      rb_is_cantput(a)
 
@@ -74,7 +74,7 @@ enum {
  * clear ring-buffer
  */
 #define rb_clear(a) do {                                                       \
-    set_clear_bits((a)->flags,RB_CANTECHO_MSK|RB_CANTGET_MSK,RB_CANTPUT_MSK);  \
+    set_clear_bits(&(a)->flags,RB_CANTECHO_MSK|RB_CANTGET_MSK,RB_CANTPUT_MSK); \
     (a)->get = (a)->echo = (a)->put = (a)->start;                              \
 } while (0)
 
