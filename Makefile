@@ -2,8 +2,8 @@
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile project.h main.c timer1.c timer.h timer.c tick.c librb.h   \
-           librb.a console.c cmdline.rl
+MANIFEST = Makefile project.h main.c librb.h librb.a console.c console.h       \
+           cmdline.rl timers.c timers.h timer.c timer.h tick.c tick.h bits.h
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
@@ -12,7 +12,7 @@ AR = avr-ar
 ARFLAGS = cru
 CC = avr-gcc
 CFLAGS = -Wall -Wno-main -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__    \
-         -DF_CPU=16000000
+         -DF_CPU=\(16000000UL\)
 CPPFLAGS = -MMD -MF $(DEPS_DIR)/$*.d
 LD = avr-ld
 LDFLAGS =
@@ -40,8 +40,9 @@ LIBS = $(filter %.a, $(MANIFEST))
 RL_SRCS = $(filter %.rl, $(MANIFEST))
 
 # ragel generated C source and header files
-RL_C_SRCS += $(patsubst %.rl, %.c, $(RL_SRCS))
+RL_C_SRCS += $(patsubst %.rl, %.rl.c, $(RL_SRCS))
 C_SRCS += $(RL_C_SRCS)
+RL_OUTPUTS = $(patsubst %.rl, %.rl.*, $(RL_SRCS))
 
 # flex source files
 L_SRCS = $(filter %.l, $(MANIFEST))
@@ -92,19 +93,22 @@ vars :
 %.yy.c %.yy.h : %.l
 	$(LEX) --outfile=$*.yy.c --header-file=$*.yy.h $<
 
-%.c : %.rl
+%.rl.c : %.rl
 	$(RAGEL) -G2 -Vp -o $<.dot $<
 	dot -Tps -o $<.ps $<.dot
-	$(RAGEL) -G2 $<
+	$(RAGEL) -G2 $< -o $<.c
 
 
 $(APPS) : $(C_OBJS) $(LIBS)
 	$(CC) $(CFLAGS) -o $@ $^
 
+librb.h : librb/librb.h
+	cp $< $@
+
 librb.a : librb/librb.a
 	cp $< $@
 
-librb.h : librb/librb.h
+bits.h : librb/bits.h
 	cp $< $@
 
 $(DUMPS) : $(APPS)
@@ -127,7 +131,7 @@ $(C_SRC_DEPS) : $(DEPS_DIR)/%.d :
 
 .PHONY : clean
 clean :
-	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(RL_C_SRCS)          \
+	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(RL_OUTPUTS)         \
 	                  $(L_C_SRCS) $(L_C_HDRS) $(Y_C_SRCS) $(Y_C_HDRS)          \
 	                  $(Y_OUTPUTS)
 	-@rmdir 2> /dev/null $(OBJS_DIR)

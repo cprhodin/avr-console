@@ -14,40 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "project.h"
-
-#include <stdio.h>
-#include <util/atomic.h>
-#include <avr/pgmspace.h>
+#ifndef _TIMERS_H_
+#define _TIMERS_H_
 
 #include "timer.h"
-#include "tick.h"
 
+#ifndef TIMER_PRESCALER
+#define TIMER_PRESCALER (64UL)
+#endif
 
-void main(void)
-{
-    /*
-     * initialize
-     */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-        timebase_init();
-        tick_init();
-    }
-    /* interrupts are enabled */
+#ifndef TIMER0_PRESCALER
+#define TIMER0_PRESCALER TIMER_PRESCALER
+#endif
 
-    /*
-     * delta-sigma demo
-     */
-    printf_P(PSTR(
-        "\n\n"
-        "###############################\n"
-        "#\n"
-        "# AVR delta-sigma demo.\n"
-        "#\n"
-        "###############################\n"
-        "\n"));
+#ifndef TIMER1_PRESCALER
+#define TIMER1_PRESCALER TIMER_PRESCALER
+#endif
 
-    /*run command line interface */
-    cmdline();
-}
+#ifndef TIMER2_PRESCALER
+#define TIMER2_PRESCALER TIMER_PRESCALER
+#endif
+
+#endif /* _TIMERS_H_ */

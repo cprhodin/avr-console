@@ -17,29 +17,28 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
-//
-// timebase counter size in bits
-//
+/*
+ * timebase counter size in bits
+ */
 #ifndef TBSIZE
 #error "TBSIZE undefined, set to 16 or 32."
 #endif
 
-//
-// timebase timer and compare register
-//
+/*
+ * timebase timer and compare register
+ */
 #ifndef TBTIMER
 #error "TBTIMER undefined; set to 0, 1, or 2."
 #endif
 
 #ifndef TBTIMER_COMP
-// default to the lower priority B compare
+/* default to the lower priority B compare */
 #define TBTIMER_COMP B
 #endif
 
-
-//
-// types and constants to support the timebase counter
-//
+/*
+ * types and constants to support the timebase counter
+ */
 #if   TBSIZE == 16
 #define tbtick_t uint16_t
 #define tbtick_st int16_t
@@ -53,17 +52,35 @@
 #define TIMEBASE_MAX_LATENCY (1L<<(TBSIZE-1))
 #define TIMEBASE_MAX_DELAY (TIMEBASE_MAX_LATENCY-2)
 
-//
-// types and constants to support the timebase timer
-//
+/*
+ * types and constants to support the timebase timer
+ */
 #if   TBTIMER == 0 || TBTIMER == 2
-#define TBTIMER_MOD (256)
+#define TBTIMER_MOD (256UL)
 #define tbtimer_t uint8_t
 #define tbtimer_st int8_t
 #elif TBTIMER == 1
-#define TBTIMER_MOD (65536)
+#define TBTIMER_MOD (65536UL)
 #define tbtimer_t uint16_t
 #define tbtimer_st int16_t
+#endif
+
+#ifndef TBTIMER_PRESCALER
+#if   TBTIMER == 0
+#define TBTIMER_PRESCALER TIMER0_PRESCALER
+#elif TBTIMER == 1
+#define TBTIMER_PRESCALER TIMER1_PRESCALER
+#elif TBTIMER == 2
+#define TBTIMER_PRESCALER TIMER2_PRESCALER
+#endif
+#else
+#if   TBTIMER == 0
+#define TIMER0_PRESCALER TBTIMER_PRESCALER
+#elif TBTIMER == 1
+#define TIMER1_PRESCALER TBTIMER_PRESCALER
+#elif TBTIMER == 2
+#define TIMER2_PRESCALER TBTIMER_PRESCALER
+#endif
 #endif
 
 #define TBTIMER_MAX_LATENCY (TBTIMER_MOD / 2)
@@ -94,10 +111,9 @@
 #define TBOCIE _TBOCIE(TBTIMER,TBTIMER_COMP)
 #define TBTIMER_COMP_vect _TBTIMER_COMP_vect(TBTIMER,TBTIMER_COMP)
 
-
-//
-// timer event
-//
+/*
+ * timer event
+ */
 struct timer_event {
     struct timer_event * next;
     tbtick_t tbtick;
@@ -116,31 +132,37 @@ struct timer_event {
         (a)->handler = (c);                                                    \
     } while (0)
 
-#define F_TBTIMER (F_CPU / TBTIMER_PRESCALER)
-
-#define TBTICKS_FROM_MS(a) ((tbtick_t) (a) * (F_TBTIMER / 1000))
-#if TBTIMER == 1
-#define TBTICKS_FROM_US(a) (((a) + 3) >> 2)
+#if (F_CPU == ((F_CPU / 1000UL) * 1000UL))
+#define KCLOCKS_PER_MS (F_CPU / 1000UL)
+#define TBTICKS_FROM_MS(m) ((tbtick_t) UDIV_CEILING(KCLOCKS_PER_MS * (m),      \
+                                                    TBTIMER_PRESCALER))
 #else
-#define TBTICKS_FROM_US(a) (((a) + 7) >> 3)
+#error "Insert timer math here."
+#endif
+
+#if (F_CPU == ((F_CPU / 1000000UL) * 1000000UL))
+#define MCLOCKS_PER_US (F_CPU / 1000000UL)
+#define TBTICKS_FROM_US(u) ((tbtick_t) UDIV_CEILING(MCLOCKS_PER_US * (u),      \
+                                                    TBTIMER_PRESCALER))
+#else
+#error "Insert timer math here."
 #endif
 
 #define timer_is_expired(a) (((volatile struct timer_event *) (a))->next == (a))
+#define timer_is_active(a) (!timer_is_expired(a))
 
+/*
+ * timebase api
+ */
+extern void timebase_init(void);
+extern tbtimer_t timebase_get(void);
+extern void timebase_delay(tbtimer_st tbticks);
 
-//
-// timebase api
-//
-void timebase_init(void);
-tbtimer_t timebase_get(void);
-void timebase_delay(tbtimer_st tbticks);
+/*
+ * timer event api
+ */
+extern void schedule_timer_event(struct timer_event * this_timer_event, struct timer_event * ref_timer_event);
+extern void cancel_timer_event(struct timer_event * this_timer_event);
+extern void timer_delay(tbtick_st ticks);
 
-
-//
-// timer event api
-//
-void schedule_timer_event(struct timer_event * this_timer_event, struct timer_event * ref_timer_event);
-void cancel_timer_event(struct timer_event * this_timer_event);
-void timer_delay(tbtick_st ticks);
-
-#endif // _TIMER_H_
+#endif /* _TIMER_H_ */
