@@ -366,7 +366,6 @@ static uint8_t cmdid;
 static uint8_t nparm;
 static uint32_t parm[MAX_PARMS];
 
-void cmdline(void) __attribute__((__noreturn__));
 void cmdline(void)
 {
     uint8_t cs;

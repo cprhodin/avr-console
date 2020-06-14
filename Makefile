@@ -6,7 +6,7 @@ MANIFEST = Makefile project.h main.c console.h console.c timers.h timers.c     \
            timer.h timer.c tick.h tick.c cmdline.rl
 
 # libraries
-LIBRARIES = librb/librb.a 
+LIBRARIES = librb/librb.a
 
 # include directories
 INCLUDES = -Ilibrb
