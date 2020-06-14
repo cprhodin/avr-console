@@ -33,10 +33,10 @@ int8_t rb_echo(struct ring_buffer * const rb, volatile uint8_t * const b)
 {
     uint8_t * echo;
 
-    if (rb_cantecho(rb)) return -1;
+    if (rb_is_cantecho(rb)) return -1;
 
     /* byte will be available for get */
-    clr_cantget(rb);
+    rb_clr_cantget(rb);
 
     /* return byte, update pointer */
     echo = rb->echo;
@@ -46,7 +46,7 @@ int8_t rb_echo(struct ring_buffer * const rb, volatile uint8_t * const b)
 
     if (echo == rb->put) {
         /* echo byte not available on exit */
-        set_cantecho(rb);
+        rb_set_cantecho(rb);
         return 0;
     }
 

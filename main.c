@@ -26,6 +26,10 @@
 #include "timer.h"
 #include "tick.h"
 
+
+/*
+ * entry point for command line interpreter
+ */
 extern void cmdline(void);
 
 

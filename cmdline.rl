@@ -25,6 +25,8 @@
 
 #include "timer.h"
 #include "tick.h"
+#include "librb.h"
+#include "console.h"
 
 #define MAX_PARMS (4)
 
@@ -44,6 +46,7 @@ enum {
     CMDID_RETURN,
     CMDID_REST,
     CMDID_RESET,
+    CMDID_STTY,
     CMDID_QUIT,
 };
 
@@ -213,6 +216,23 @@ void do_tickper(uint8_t nparm, uint32_t * parm)
     tick_set_period(TBTICKS_FROM_MS(parm[0]));
 }
 
+void do_stty(uint8_t nparm, uint32_t * parm)
+{
+    uint16_t attr;
+
+    /*
+     * display console attributes in an stty like way
+     */
+    attr = console_getattr();
+    printf_P(PSTR("\nstty: %cicrnl %cecho %cicanon %cinonblock %ciascii %conlcr\n\n"),
+             (attr & ICRNL)    ?'+':'-',
+             (attr & ECHO)     ?'+':'-',
+             (attr & ICANON)   ?'+':'-',
+             (attr & INONBLOCK)?'+':'-',
+             (attr & IASCII)   ?'+':'-',
+             (attr & ONLCR)    ?'+':'-');
+}
+
 void do_help(uint8_t nparm, uint32_t * parm)
 {
     fputs_P(PSTR(
@@ -236,6 +256,7 @@ __attribute__((__progmem__)) void (* const cmdtbl[])(uint8_t, uint32_t *) = {
     [CMDID_WRITERAM]  = do_writeram,
     [CMDID_TICKEN]    = do_ticken,
     [CMDID_TICKPER]   = do_tickper,
+    [CMDID_STTY]      = do_stty,
     [CMDID_STOP]      = exec_stop,
     [CMDID_START]     = exec_stub,
     [CMDID_PUT]       = exec_stub,
@@ -295,6 +316,7 @@ __attribute__((__progmem__)) void (* const cmdtbl[])(uint8_t, uint32_t *) = {
     action cmd_wr     { cmdid = CMDID_WRITERAM;  }
     action cmd_te     { cmdid = CMDID_TICKEN;    }
     action cmd_tp     { cmdid = CMDID_TICKPER;   }
+    action cmd_stty   { cmdid = CMDID_STTY;      }
     action cmd_quit   { cmdid = CMDID_QUIT;      }
     action cmd_return { cmdid = CMDID_RETURN;    }
     action cmd_rest   { cmdid = CMDID_REST;      }
@@ -311,6 +333,7 @@ __attribute__((__progmem__)) void (* const cmdtbl[])(uint8_t, uint32_t *) = {
         'wr'     %cmd_wr     |
         'te'     %cmd_te     |
         'tp'     %cmd_tp     |
+        'stty'   %cmd_stty   |
         'quit'   %cmd_quit   |
         'return' %cmd_return |
         'rest'   %cmd_rest   |

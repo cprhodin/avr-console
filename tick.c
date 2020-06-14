@@ -47,7 +47,7 @@ static int8_t tick_timer_handler(struct timer_event * this_timer_event)
     PORTD &= ~_BV(PORTD4);
 
     /* schedule the output off timer for 1 ms */
-    tick_off_event.tbtick = TBTICKS_FROM_MS(1);
+    tick_off_event.tbtick = TBTICKS_FROM_MS(2);
     schedule_timer_event(&tick_off_event, this_timer_event);
 
     /* advance this timer one second */
@@ -57,7 +57,8 @@ static int8_t tick_timer_handler(struct timer_event * this_timer_event)
     return 1;
 }
 
-static struct timer_event tick_timer_event = {
+static struct timer_event tick_timer_event =
+{
     .next = &tick_timer_event,
     .handler = tick_timer_handler,
 };

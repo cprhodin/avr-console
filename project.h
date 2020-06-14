@@ -17,19 +17,84 @@
 #ifndef _PROJECT_H_
 #define _PROJECT_H_
 
+/*
+ * include for the explicitly sized types
+ */
+#include <stdint.h>
+
+#define UDIV_FLOOR(a,b) ((a) / (b))
+#define UDIV_ROUND(a,b) (((a) + ((b) / 2)) / (b))
+#define UDIV_CEILING(a,b) (((a) + (b) - 1) / (b))
+
+#define min(a,b) ({              \
+        __typeof__ (a) _a = (a); \
+        __typeof__ (b) _b = (b); \
+       _a < _b ? _a : _b;        \
+})
+
+#define max(a,b) ({              \
+        __typeof__ (a) _a = (a); \
+        __typeof__ (b) _b = (b); \
+       _a > _b ? _a : _b;        \
+})
+
+/* lo <= n <= hi */
+#define limit_range(lo,n,hi) min(max(lo,(n)),hi)
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*(a)))
+
+
+/*
+ * console interface
+ */
 #ifndef BAUD
-#define BAUD (250000L)
+#define BAUD (9600L)
 #endif
 
-//
-// timebase timer, 0, 1 or 2 (only 1 is extensively tested)
-//
-#define TBTIMER 1
-#define TBTIMER_PRESCALER 64UL
+#define TX_BUF_SIZE (128)
 
-//
-// timebase counter size in bits, either 16 or 32
-//
+
+/*
+ * Project pin assignments.
+ */
+
+#define ADC_RANGE 1024
+#define ADCREF_MV 5000
+
+/*
+ * timebase timer prescaler
+ */
+#define TBTIMER_PRESCALER (64UL)
+
+/*
+ * timebase timer, 0, 1 or 2 (only 1 is extensively tested)
+ */
+#define TBTIMER 1
+
+/*
+ * use the A compare so B can be used to trigger the ADC
+ */
+#define TBTIMER_COMP A
+
+/*
+ * timebase counter size in bits, either 16 or 32
+ */
 #define TBSIZE 32
 
-#endif // _PROJECT_H_
+/*
+ * initialize console before main
+ */
+extern void console_init(void) __attribute__((__constructor__));
+
+/*
+ * initialize timers before main
+ */
+extern void timers_init(void) __attribute__((__constructor__));
+
+/*
+ * these functions never return
+ */
+extern void main(void) __attribute__((__noreturn__));
+extern void cmdline(void) __attribute__((__noreturn__));
+
+#endif /* _PROJECT_H_ */

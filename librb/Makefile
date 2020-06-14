@@ -3,8 +3,8 @@
 
 TARGETS = librb.a
 
-MANIFEST = Makefile librb.h rb_echo.c rb_erase.c rb_get.c rb_init.c rb_kill.c  \
-           rb_put.c rb_put_echo.c rb_unput.c
+MANIFEST = Makefile bits.h librb.h rb_echo.c rb_erase.c rb_get.c rb_init.c     \
+           rb_kill.c rb_put.c rb_put_echo.c rb_unput.c
 
 LIBRARIES =
 

@@ -33,10 +33,10 @@ int8_t rb_get(struct ring_buffer * const rb, volatile uint8_t * const b)
 {
     uint8_t * get;
 
-    if (rb_cantget(rb)) return -1;
+    if (rb_is_cantget(rb)) return -1;
 
     /* space will be available for put */
-    clr_cantput(rb);
+    rb_clr_cantput(rb);
 
     /* return byte, update pointer */
     get = rb->get;
@@ -46,7 +46,7 @@ int8_t rb_get(struct ring_buffer * const rb, volatile uint8_t * const b)
 
     if (get == rb->echo) {
         /* no more available on exit */
-        set_cantget(rb);
+        rb_set_cantget(rb);
         return 0;
     }
 
