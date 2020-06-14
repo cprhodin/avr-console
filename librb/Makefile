@@ -1,4 +1,3 @@
-
 .SUFFIXES:
 
 TARGETS = librb.a
@@ -6,7 +5,11 @@ TARGETS = librb.a
 MANIFEST = Makefile bits.h librb.h rb_echo.c rb_erase.c rb_get.c rb_init.c     \
            rb_kill.c rb_put.c rb_put_echo.c rb_unput.c
 
-LIBRARIES =
+# libraries
+LIBRARIES = 
+
+# include directories
+INCLUDES = 
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
@@ -14,14 +17,35 @@ DEPS_DIR = .depends
 AR = avr-ar
 ARFLAGS = cru
 CC = avr-gcc
-CFLAGS = -Wall -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__
+CFLAGS = -Wall -Wno-main -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__    \
+         -DF_CPU=\(16000000UL\) $(INCLUDES)
 CPPFLAGS = -MMD -MF $(DEPS_DIR)/$*.d
+LD = avr-ld
+LDFLAGS =
 LEX = flex
 YACC = bison
+RAGEL = ragel
+
+# target libraries
+LIBS = $(filter %.a, $(TARGETS))
+
+# target dumps
+DUMPS = $(filter %.dump, $(TARGETS))
+
+# target applications
+APPS = $(filter-out $(LIBS) $(DUMPS), $(TARGETS))
 
 # C source and header files
 C_SRCS = $(filter %.c, $(MANIFEST))
 C_HDRS = $(filter %.h, $(MANIFEST))
+
+# ragel source files
+RL_SRCS = $(filter %.rl, $(MANIFEST))
+
+# ragel generated C source and header files
+RL_C_SRCS += $(patsubst %.rl, %.rl.c, $(RL_SRCS))
+C_SRCS += $(RL_C_SRCS)
+RL_OUTPUTS = $(patsubst %.rl, %.rl.*, $(RL_SRCS))
 
 # flex source files
 L_SRCS = $(filter %.l, $(MANIFEST))
@@ -47,8 +71,16 @@ C_SRC_DEPS = $(patsubst %.c, $(DEPS_DIR)/%.d, $(C_SRCS))
 .PHONY : all
 all : $(TARGETS)
 
+.PHONY : burn
+burn : $(APPS)
+	avrdude -p atmega328p -U $<
+
 .PHONY : vars
 vars :
+	@echo TARGETS = $(TARGETS)
+	@echo APPS = $(APPS)
+	@echo LIBS = $(LIBS)
+	@echo LIBRARIES = $(LIBRARIES)
 	@echo C_SRCS = $(C_SRCS)
 	@echo C_HDRS = $(C_HDRS)
 	@echo L_SRCS = $(L_SRCS)
@@ -68,10 +100,22 @@ vars :
 %.yy.c %.yy.h : %.l
 	$(LEX) --outfile=$*.yy.c --header-file=$*.yy.h $<
 
-$(TARGETS) : $(C_OBJS)
+%.rl.c : %.rl
+	$(RAGEL) -G2 -Vp -o $<.dot $<
+	dot -Tps -o $<.ps $<.dot
+	$(RAGEL) -G2 $< -o $<.c
+
+
+$(APPS) : $(C_OBJS) $(LIBRARIES)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(LIBS) : $(C_OBJS) $(LIBRARIES)
 	$(AR) $(ARFLAGS) $@ $^
 
-$(C_OBJS) : | $(L_C_HDRS) $(Y_C_HDRS) $(OBJS_DIR) $(DEPS_DIR)
+$(DUMPS) : $(APPS)
+	avr-objdump -t -d $< > $@
+
+$(C_OBJS) : | $(MANIFEST) $(L_C_HDRS) $(Y_C_HDRS) $(OBJS_DIR) $(DEPS_DIR)
 
 $(OBJS_DIR) :
 	mkdir $(OBJS_DIR)
@@ -88,8 +132,9 @@ $(C_SRC_DEPS) : $(DEPS_DIR)/%.d :
 
 .PHONY : clean
 clean :
-	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(L_C_SRCS)       \
-	                  $(L_C_HDRS) $(Y_C_SRCS) $(Y_C_HDRS) $(Y_OUTPUTS)
+	-@rm 2> /dev/null $(TARGETS) $(C_OBJS) $(C_SRC_DEPS) $(RL_OUTPUTS)     \
+	                  $(L_C_SRCS) $(L_C_HDRS) $(Y_C_SRCS) $(Y_C_HDRS)      \
+	                  $(Y_OUTPUTS)
 	-@rmdir 2> /dev/null $(OBJS_DIR)
 	-@rmdir 2> /dev/null $(DEPS_DIR)
 

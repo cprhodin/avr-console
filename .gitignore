@@ -1,6 +1,14 @@
-# Object files
-*.o
-*.ko
+# Extensionless output binary
+avr-console
+
+# Output artifacts
+*.dump
+
+# Object and depends directories
+.*/
+
+# Ragel intermediate files
+*.rl.*
 
 # Libraries
 *.lib

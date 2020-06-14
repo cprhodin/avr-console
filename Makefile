@@ -2,8 +2,14 @@
 
 TARGETS = avr-console avr-console.dump
 
-MANIFEST = Makefile project.h main.c librb.h librb.a console.h console.c       \
-           timers.h timers.c timer.h timer.c tick.h tick.c cmdline.rl
+MANIFEST = Makefile project.h main.c console.h console.c timers.h timers.c     \
+           timer.h timer.c tick.h tick.c cmdline.rl
+
+# libraries
+LIBRARIES = librb/librb.a 
+
+# include directories
+INCLUDES = -Ilibrb
 
 OBJS_DIR = .objects
 DEPS_DIR = .depends
@@ -12,7 +18,7 @@ AR = avr-ar
 ARFLAGS = cru
 CC = avr-gcc
 CFLAGS = -Wall -Wno-main -O2 -std=c99 -mmcu=atmega328p -D__AVR_ATmega328P__    \
-         -DF_CPU=\(16000000UL\)
+         -DF_CPU=\(16000000UL\) $(INCLUDES)
 CPPFLAGS = -MMD -MF $(DEPS_DIR)/$*.d
 LD = avr-ld
 LDFLAGS =
@@ -32,9 +38,6 @@ APPS = $(filter-out $(LIBS) $(DUMPS), $(TARGETS))
 # C source and header files
 C_SRCS = $(filter %.c, $(MANIFEST))
 C_HDRS = $(filter %.h, $(MANIFEST))
-
-# libraries
-LIBS = $(filter %.a, $(MANIFEST))
 
 # ragel source files
 RL_SRCS = $(filter %.rl, $(MANIFEST))
@@ -74,6 +77,10 @@ burn : $(APPS)
 
 .PHONY : vars
 vars :
+	@echo TARGETS = $(TARGETS)
+	@echo APPS = $(APPS)
+	@echo LIBS = $(LIBS)
+	@echo LIBRARIES = $(LIBRARIES)
 	@echo C_SRCS = $(C_SRCS)
 	@echo C_HDRS = $(C_HDRS)
 	@echo L_SRCS = $(L_SRCS)
@@ -99,18 +106,11 @@ vars :
 	$(RAGEL) -G2 $< -o $<.c
 
 
-$(APPS) : $(C_OBJS) $(LIBS)
+$(APPS) : $(C_OBJS) $(LIBRARIES)
 	$(CC) $(CFLAGS) -o $@ $^
 
-librb.h : librb/librb.h bits.h
-	cp $< $@
-
-librb.a : librb/librb.a
-	cp $< $@
-
-
-bits.h : librb/bits.h
-	cp $< $@
+$(LIBS) : $(C_OBJS) $(LIBRARIES)
+	$(AR) $(ARFLAGS) $@ $^
 
 $(DUMPS) : $(APPS)
 	avr-objdump -t -d $< > $@
