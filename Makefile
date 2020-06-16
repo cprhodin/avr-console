@@ -3,7 +3,8 @@
 TARGETS = avr-console avr-console.dump
 
 MANIFEST = Makefile project.h main.c console.h console.c timers.h timers.c     \
-           timer.h timer.c tick.h tick.c cmdline.rl
+           timer.h timer.c tick.h tick.c cmdline.rl pinmap.h itty.h       \
+           ilitek_fastio.h ilitek_fastio.c mathops.h
 
 # libraries
 LIBRARIES = librb/librb.a

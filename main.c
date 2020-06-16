@@ -16,15 +16,16 @@
  */
 #include "project.h"
 
+#include "timer.h"
+#include "tick.h"
+#include "ilitek_fastio.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
-
-#include "timer.h"
-#include "tick.h"
 
 
 /*
@@ -44,6 +45,9 @@ void main(void)
         tick_init();
     }
     /* interrupts are enabled */
+
+    /* initializae and enable LCD */
+    ilitek_init();
 
     /*
      * run command line interface

@@ -17,10 +17,7 @@
 #ifndef _PROJECT_H_
 #define _PROJECT_H_
 
-/*
- * include for the explicitly sized types
- */
-#include <stdint.h>
+#include "pinmap.h"
 
 #define UDIV_FLOOR(a,b) ((a) / (b))
 #define UDIV_ROUND(a,b) (((a) + ((b) / 2)) / (b))
@@ -57,6 +54,24 @@
 /*
  * Project pin assignments.
  */
+
+/* Tick pin */
+#define SPEAKER_OUT  PINMAP_D4
+
+/* ILITEK LCD controller */
+
+// MISO MOSI SCK SS + A0 RESET
+
+#define ILITEK_SCK   PINMAP_SCK
+#define ILITEK_SI    PINMAP_MOSI
+#define ILITEK_CS    PINMAP_SS
+#define ILITEK_RES   PINMAP_D6
+#define ILITEK_A0    PINMAP_D7
+
+#define X_ORIGIN 0
+#define X_SIZE 240
+#define Y_ORIGIN 32
+#define Y_SIZE 320
 
 #define ADC_RANGE 1024
 #define ADCREF_MV 5000

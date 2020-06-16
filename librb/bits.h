@@ -17,6 +17,9 @@
 #ifndef _BITS_H_
 #define _BITS_H_
 
+#include <avr/io.h>
+#include <stdint.h>
+
 #define _BVl(a) (1UL<<(a))
 
 #define bitmask_set_cond(a,b,c)  bitmask_set_field((a),(b),(c)?(b):0)

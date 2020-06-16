@@ -16,52 +16,48 @@
  */
 #include "project.h"
 
+#include "tick.h"
+#include "timer.h"
+#include "pinmap.h"
+
 #include <stdio.h>
 #include <avr/io.h>
 #include <util/atomic.h>
+#include <stdint.h>
 
-#include "timer.h"
-#include "tick.h"
+/* tick timer period, default 1 second */
+static uint32_t tick_period = TBTICKS_FROM_MS(1000);
 
-static uint32_t tick_period;
 
+TIMER_EVENT(tick_off_event, tick_off_handler);
 
 static int8_t tick_off_handler(struct timer_event * this_timer_event)
 {
     /* output high, OFF */
-    PORTD |= _BV(PORTD4);
+    pinmap_set(SPEAKER_OUT);
 
     /* don't reschedule this timer */
     return 0;
 }
 
-static struct timer_event tick_off_event = {
-    .next = &tick_off_event,
-    .handler = tick_off_handler,
-};
 
+TIMER_EVENT(tick_timer_event, tick_timer_handler);
 
 static int8_t tick_timer_handler(struct timer_event * this_timer_event)
 {
     /* output low, ON */
-    PORTD &= ~_BV(PORTD4);
+    pinmap_clear(SPEAKER_OUT);
 
-    /* schedule the output off timer for 1 ms */
+    /* schedule the output off timer for 2 ms */
     tick_off_event.tbtick = TBTICKS_FROM_MS(2);
     schedule_timer_event(&tick_off_event, this_timer_event);
 
-    /* advance this timer one second */
+    /* advance this timer one period */
     this_timer_event->tbtick += tick_period;
 
     /* reschedule this timer */
     return 1;
 }
-
-static struct timer_event tick_timer_event =
-{
-    .next = &tick_timer_event,
-    .handler = tick_timer_handler,
-};
 
 
 void tick_set_period(uint32_t period)
@@ -92,10 +88,9 @@ void tick_enable(uint8_t enable)
 void tick_init(void)
 {
     /* initialize speaker output pin */
-    PORTD |= _BV(PORTD4);
-    DDRD |= _BV(DDD4);
+    pinmap_set(SPEAKER_OUT);
+    pinmap_dir(0, SPEAKER_OUT);
 
     /* start tick timer */
-    tick_set_period(TBTICKS_FROM_MS(1000));
     tick_enable(1);
 }

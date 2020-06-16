@@ -17,6 +17,8 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
+#include <stdint.h>
+
 /*
  * timebase counter size in bits
  */
@@ -110,8 +112,8 @@ struct timer_event {
 
 #define TIMER_EVENT_INIT(name,handler) { &name, 0, handler }
 #define TIMER_EVENT(name,handler)                                              \
-        int8_t handler(struct timer_event * this_timer_event);                 \
-        struct timer_event name = TIMER_EVENT_INIT(name,handler)
+        static int8_t handler(struct timer_event * this_timer_event);          \
+        static struct timer_event name = TIMER_EVENT_INIT(name,handler)
 
 #define init_timer_event(a,b,c)                                                \
     do {                                                                       \

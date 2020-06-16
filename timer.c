@@ -16,10 +16,10 @@
  */
 #include "project.h"
 
+#include "timer.h"
+
 #include <util/atomic.h>
 #include <stdio.h>
-
-#include "timer.h"
 
 /*
  * system timebase

@@ -17,6 +17,8 @@
 #ifndef _TICK_H_
 #define _TICK_H_
 
+#include <stdint.h>
+
 extern void tick_set_period(uint32_t period);
 extern void tick_enable(uint8_t enable);
 extern void tick_init(void);
