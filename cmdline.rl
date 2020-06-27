@@ -153,41 +153,20 @@ void do_readflash(uint8_t nparm, uint32_t * parm)
 void do_writeram(uint8_t nparm, uint32_t * parm)
 {
     uint8_t * addr;
-    uint16_t cnt;
+    uint8_t val;
 
-    if (nparm < 1) {
+    if (nparm < 2) {
         fputs_P(PSTR(
             "\n"
-            "usage: wr address\n"
+            "usage: wr address value\n"
             "\n"), stdout);
         return;
     }
 
     addr = (uint8_t *) (uint16_t) parm[0];
-    cnt = (uint16_t) parm[1];
+    val = (uint8_t) parm[1];
 
-    while (cnt) {
-        uint8_t n = (cnt > 16) ? (16) : (cnt);
-        uint8_t p;
-
-        printf_P(PSTR("%04x  "), (uint16_t) addr);
-        for (p = 0; p < 16; p++) {
-            if (p == 8) putchar(' ');
-            if (p < n)
-                printf_P(PSTR("%02x "), addr[p]);
-            else
-                fputs_P(PSTR("   "), stdout);
-        }
-        putchar(' ');
-        for (p = 0; p < n; p++) {
-            if (p == 8) putchar(' ');
-            putchar(isprint(addr[p]) ? addr[p] : '.');
-        }
-        putchar('\n');
-
-        addr += n;
-        cnt -= n;
-    }
+    *addr = val;
 }
 
 void do_ticken(uint8_t nparm, uint32_t * parm)
